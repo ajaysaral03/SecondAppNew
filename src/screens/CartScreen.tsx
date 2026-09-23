@@ -265,7 +265,7 @@ const CartScreen = ({onBack}) => {
           onPress={onBack}
         >
           <Text style={styles.backIcon}>
-            ‹
+            ‹ aa
           </Text>
         </TouchableOpacity>
 
