@@ -406,7 +406,7 @@ const LoginScreen = ({onLogin}) => {
             <View style={styles.cardHeader}>
 
               <Text style={styles.welcome}>
-                Welcome Back 👋
+                Welcome Back 👋    ajay saral 
               </Text>
 
               <Text style={styles.cardSubtitle}>
