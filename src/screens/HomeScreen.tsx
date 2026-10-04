@@ -1091,25 +1091,20 @@ const styles = StyleSheet.create({
 
 
   /* ================= SEARCH ================= */
+searchContainer: {
+  height: 56,
+  borderRadius: 18,
+  backgroundColor: '#FFFFFF',
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 13,
 
-  searchContainer: {
-    height: 56,
+  borderWidth: 1,
+  borderColor: '#E5EAF5',
 
-    borderRadius: 18,
-
-    backgroundColor: '#FFFFFF',
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    paddingHorizontal: 13,
-
-    borderWidth: 1,
-    borderColor: '#E5EAF5',
-
-    marginBottom: 18,
-  },
+  marginTop: -6,
+  marginBottom: 18,
+},
 
   searchInput: {
     flex: 1,

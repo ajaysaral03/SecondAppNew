@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
 
   safeArea: {
     backgroundColor: '#F7F9FF',
+    height: 130,
   },
 
   header: {

@@ -1,14 +1,16 @@
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   StatusBar,
-  Alert,
-  SafeAreaView,
+  Image,
+  Animated,
+  Modal,
+  Dimensions,
   Platform,
 } from 'react-native';
 
@@ -28,388 +30,394 @@ import {
   Package,
   CreditCard,
   MapPin,
+  X,
+  CheckCircle,
 } from 'lucide-react-native';
 
-import Footer from '../components/Footer';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
 
-interface ProfileScreenProps {
-  navigation?: any;
-  cartCount?: number;
+const {width} = Dimensions.get('window');
 
-  onBackPress?: () => void;
+const ProfileScreen = () => {
+  const navigation = useNavigation<any>();
 
-  onHomePress?: () => void;
-  onProductsPress?: () => void;
-  onFavoritesPress?: () => void;
-  onCartPress?: () => void;
-  onProfilePress?: () => void;
-}
+  // =========================
+  // ANIMATIONS
+  // =========================
 
-const ProfileScreen = ({
-  navigation,
-  cartCount = 0,
+  const headerAnim = useRef(new Animated.Value(-20)).current;
+  const profileAnim = useRef(new Animated.Value(20)).current;
+  const profileOpacity = useRef(new Animated.Value(0)).current;
 
-  onBackPress,
+  const ordersAnim = useRef(new Animated.Value(20)).current;
+  const favoritesAnim = useRef(new Animated.Value(20)).current;
+  const personalAnim = useRef(new Animated.Value(20)).current;
+  const addressAnim = useRef(new Animated.Value(20)).current;
 
-  onHomePress,
-  onProductsPress,
-  onFavoritesPress,
-  onCartPress,
-  onProfilePress,
-}: ProfileScreenProps) => {
+  const notificationsAnim = useRef(new Animated.Value(20)).current;
+  const settingsAnim = useRef(new Animated.Value(20)).current;
+  const privacyAnim = useRef(new Animated.Value(20)).current;
 
-  // =====================================================
-  // BACK BUTTON
-  // =====================================================
+  const contactAnim = useRef(new Animated.Value(20)).current;
+  const logoutAnim = useRef(new Animated.Value(20)).current;
+
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+
+  // =========================
+  // START ANIMATION
+  // =========================
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(headerAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 18,
+      }),
+
+      Animated.timing(profileOpacity, {
+        toValue: 1,
+        duration: 450,
+        useNativeDriver: true,
+      }),
+
+      Animated.spring(profileAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(ordersAnim, {
+        toValue: 0,
+        delay: 80,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(favoritesAnim, {
+        toValue: 0,
+        delay: 120,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(personalAnim, {
+        toValue: 0,
+        delay: 160,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(addressAnim, {
+        toValue: 0,
+        delay: 200,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(notificationsAnim, {
+        toValue: 0,
+        delay: 240,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(settingsAnim, {
+        toValue: 0,
+        delay: 280,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(privacyAnim, {
+        toValue: 0,
+        delay: 320,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(contactAnim, {
+        toValue: 0,
+        delay: 360,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+
+      Animated.spring(logoutAnim, {
+        toValue: 0,
+        delay: 400,
+        useNativeDriver: true,
+        damping: 16,
+      }),
+    ]).start();
+  }, []);
+
+  // =========================
+  // BACK
+  // =========================
 
   const handleBack = () => {
-    // Parent callback available hai to wahi use karo
-    if (typeof onBackPress === 'function') {
-      onBackPress();
-      return;
-    }
-
-    // React Navigation available hai
-    if (navigation) {
-      try {
-        if (
-          typeof navigation.canGoBack === 'function' &&
-          navigation.canGoBack()
-        ) {
-          navigation.goBack();
-          return;
-        }
-
-        // Agar previous screen nahi hai
-        if (typeof navigation.navigate === 'function') {
-          navigation.navigate('Home');
-          return;
-        }
-      } catch (error) {
-        console.log('Back Button Error:', error);
-      }
-    }
-
-    console.log('Navigation object not available');
-  };
-
-  // =====================================================
-  // HOME
-  // =====================================================
-
-  const handleHome = () => {
-    if (typeof onHomePress === 'function') {
-      onHomePress();
-      return;
-    }
-
-    if (navigation?.navigate) {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
       navigation.navigate('Home');
     }
   };
 
-  // =====================================================
-  // PRODUCTS
-  // =====================================================
+  // =========================
+  // NAVIGATION
+  // =========================
 
-  const handleProducts = () => {
-    if (typeof onProductsPress === 'function') {
-      onProductsPress();
-      return;
-    }
-
-    if (navigation?.navigate) {
-      navigation.navigate('Products');
+  const goTo = (screenName: string) => {
+    try {
+      navigation.navigate(screenName);
+    } catch (error) {
+      console.log(`Navigation error: ${screenName}`, error);
     }
   };
 
-  // =====================================================
-  // FAVORITES
-  // =====================================================
-
-  const handleFavorites = () => {
-    if (typeof onFavoritesPress === 'function') {
-      onFavoritesPress();
-      return;
-    }
-
-    if (navigation?.navigate) {
-      navigation.navigate('Favorites');
-    }
-  };
-
-  // =====================================================
-  // CART
-  // =====================================================
-
-  const handleCart = () => {
-    if (typeof onCartPress === 'function') {
-      onCartPress();
-      return;
-    }
-
-    if (navigation?.navigate) {
-      navigation.navigate('Cart');
-    }
-  };
-
-  // =====================================================
-  // PROFILE
-  // =====================================================
-
-  const handleProfile = () => {
-    if (typeof onProfilePress === 'function') {
-      onProfilePress();
-      return;
-    }
-
-    if (navigation?.navigate) {
-      navigation.navigate('Profile');
-    }
-  };
-
-  // =====================================================
+  // =========================
   // LOGOUT
-  // =====================================================
+  // =========================
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            console.log('User logged out');
-          },
-        },
-      ],
-      {
-        cancelable: true,
-      },
-    );
+    setShowLogoutAlert(true);
   };
 
-  // =====================================================
+  const confirmLogout = () => {
+    setShowLogoutAlert(false);
+
+    setTimeout(() => {
+      try {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Login'}],
+        });
+      } catch (error) {
+        console.log('Logout error:', error);
+        navigation.navigate('Login');
+      }
+    }, 150);
+  };
+
+  // =========================
   // OPTION CARD
-  // =====================================================
+  // =========================
 
   const renderOption = (
     icon: React.ReactNode,
     title: string,
     subtitle: string,
     iconBackground: string,
-    onPress?: () => void,
+    onPress: () => void,
+    animation: Animated.Value,
   ) => {
     return (
-      <TouchableOpacity
-        style={styles.optionCard}
-        activeOpacity={0.7}
-        onPress={onPress}
-      >
-        <View style={styles.optionLeft}>
+      <Animated.View
+        style={{
+          opacity: profileOpacity,
+          transform: [{translateY: animation}],
+        }}>
+        <Pressable
+          onPress={onPress}
+          android_ripple={{color: '#E2E8F0'}}
+          style={({pressed}) => [
+            styles.optionCard,
+            pressed && styles.optionPressed,
+          ]}>
+          <View style={styles.optionLeft}>
+            <View
+              style={[
+                styles.optionIcon,
+                {backgroundColor: iconBackground},
+              ]}>
+              {icon}
+            </View>
 
-          <View
-            style={[
-              styles.optionIcon,
-              {
-                backgroundColor: iconBackground,
-              },
-            ]}
-          >
-            {icon}
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>{title}</Text>
+
+              <Text style={styles.optionSubtitle}>{subtitle}</Text>
+            </View>
           </View>
 
-          <View style={styles.optionContent}>
-            <Text style={styles.optionTitle}>
-              {title}
-            </Text>
-
-            <Text style={styles.optionSubtitle}>
-              {subtitle}
-            </Text>
+          <View style={styles.chevronContainer}>
+            <ChevronRight
+              size={17}
+              color="#64748B"
+              strokeWidth={2.5}
+            />
           </View>
-
-        </View>
-
-        <View style={styles.chevronContainer}>
-          <ChevronRight
-            size={18}
-            color="#64748B"
-            strokeWidth={2.3}
-          />
-        </View>
-      </TouchableOpacity>
+        </Pressable>
+      </Animated.View>
     );
   };
 
-  // =====================================================
-  // RETURN
-  // =====================================================
+  // =========================
+  // UI
+  // =========================
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar
-        backgroundColor="#FFFFFF"
         barStyle="dark-content"
-        translucent={false}
+        backgroundColor="#F7F9FF"
       />
 
       <View style={styles.screen}>
 
-        {/* ================================================= */}
-        {/* HEADER */}
-        {/* ================================================= */}
+        {/* =====================================
+            HEADER
+        ===================================== */}
 
-        <View style={styles.headerWrapper}>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              transform: [{translateY: headerAnim}],
+            },
+          ]}>
 
-          <View style={styles.header}>
+          {/* BACK BUTTON */}
 
-            {/* BACK BUTTON */}
+          <Pressable
+            onPress={handleBack}
+            hitSlop={10}
+            android_ripple={{color: '#E2E8F0'}}
+            style={({pressed}) => [
+              styles.backButton,
+              pressed && styles.backButtonPressed,
+            ]}>
+            <ArrowLeft
+              size={22}
+              color="#334155"
+              strokeWidth={2.6}
+            />
+          </Pressable>
 
-            <TouchableOpacity
-              style={styles.backButton}
-              activeOpacity={0.7}
-              onPress={handleBack}
-              hitSlop={{
-                top: 12,
-                bottom: 12,
-                left: 12,
-                right: 12,
-              }}
-            >
-              <ArrowLeft
-                size={24}
-                color="#0F172A"
-                strokeWidth={2.7}
-              />
-            </TouchableOpacity>
+          {/* HEADER TITLE */}
 
-            {/* TITLE */}
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>
+              Profile
+            </Text>
 
-            <View style={styles.headerTitleContainer}>
-
-              <Text style={styles.headerTitle}>
-                Profile
-              </Text>
-
-              <Text style={styles.headerSubtitle}>
-                Manage your account
-              </Text>
-
-            </View>
-
-            {/* EDIT */}
-
-            <TouchableOpacity
-              style={styles.editButton}
-              activeOpacity={0.7}
-              onPress={() => {
-                console.log('Edit profile');
-              }}
-            >
-              <Edit3
-                size={18}
-                color="#2563EB"
-                strokeWidth={2.3}
-              />
-            </TouchableOpacity>
-
+            <Text style={styles.headerSubtitle}>
+              Manage your account
+            </Text>
           </View>
 
-        </View>
+          {/* EDIT BUTTON */}
 
-        {/* ================================================= */}
-        {/* CONTENT */}
-        {/* ================================================= */}
+          <Pressable
+            onPress={() => {
+              console.log('Edit profile');
+            }}
+            style={({pressed}) => [
+              styles.editButton,
+              pressed && styles.editPressed,
+            ]}>
+            <Edit3
+              size={19}
+              color="#2563EB"
+              strokeWidth={2.4}
+            />
+          </Pressable>
+        </Animated.View>
+
+        {/* =====================================
+            CONTENT
+        ===================================== */}
 
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+          keyboardShouldPersistTaps="handled">
 
-          {/* ================================================= */}
-          {/* PROFILE CARD */}
-          {/* ================================================= */}
+          {/* =====================================
+              PROFILE CARD
+          ===================================== */}
 
-          <View style={styles.profileCard}>
+          <Animated.View
+            style={[
+              styles.profileCard,
+              {
+                opacity: profileOpacity,
+                transform: [{translateY: profileAnim}],
+              },
+            ]}>
+
+            {/* TOP PROFILE */}
 
             <View style={styles.profileTop}>
 
-              <View style={styles.avatarWrapper}>
+              {/* PROFILE IMAGE */}
 
-                <View style={styles.avatar}>
-                  <User
-                    size={38}
-                    color="#2563EB"
-                    strokeWidth={2.2}
-                  />
-                </View>
+              <View style={styles.avatarWrapper}>
+                <Image
+                  source={{
+                    uri:
+                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
+                  }}
+                  style={styles.avatarImage}
+                />
 
                 <View style={styles.onlineDot} />
-
               </View>
 
-              <View style={styles.profileInfo}>
+              {/* USER INFO */}
 
+              <View style={styles.profileInfo}>
                 <Text
                   style={styles.profileName}
-                  numberOfLines={1}
-                >
+                  numberOfLines={1}>
                   John William
                 </Text>
 
                 <View style={styles.infoRow}>
-
                   <Mail
                     size={13}
                     color="#64748B"
-                    strokeWidth={2}
                   />
 
                   <Text
                     style={styles.infoText}
-                    numberOfLines={1}
-                  >
+                    numberOfLines={1}>
                     johnwilliam@gmail.com
                   </Text>
-
                 </View>
 
                 <View style={styles.infoRow}>
-
                   <Phone
                     size={13}
                     color="#64748B"
-                    strokeWidth={2}
                   />
 
                   <Text style={styles.infoText}>
                     +91 98765 43210
                   </Text>
-
                 </View>
 
-              </View>
+                <View style={styles.profileLocation}>
+                  <MapPin
+                    size={12}
+                    color="#2563EB"
+                  />
 
+                  <Text style={styles.locationText}>
+                    Indore, India
+                  </Text>
+                </View>
+              </View>
             </View>
 
-            {/* ================================================= */}
             {/* STATS */}
-            {/* ================================================= */}
 
             <View style={styles.statsContainer}>
 
               <View style={styles.statItem}>
-
                 <Package
                   size={18}
                   color="#2563EB"
@@ -424,13 +432,11 @@ const ProfileScreen = ({
                     Orders
                   </Text>
                 </View>
-
               </View>
 
               <View style={styles.statDivider} />
 
               <View style={styles.statItem}>
-
                 <Heart
                   size={18}
                   color="#EF4444"
@@ -445,13 +451,11 @@ const ProfileScreen = ({
                     Favorites
                   </Text>
                 </View>
-
               </View>
 
               <View style={styles.statDivider} />
 
               <View style={styles.statItem}>
-
                 <CreditCard
                   size={18}
                   color="#7C3AED"
@@ -466,235 +470,200 @@ const ProfileScreen = ({
                     Payments
                   </Text>
                 </View>
-
               </View>
 
             </View>
+          </Animated.View>
 
-          </View>
-
-          {/* ================================================= */}
-          {/* MY ACCOUNT */}
-          {/* ================================================= */}
+          {/* =====================================
+              MY ACCOUNT
+          ===================================== */}
 
           <Text style={styles.sectionTitle}>
             My Account
           </Text>
 
           {renderOption(
-            <ShoppingBag
-              size={20}
-              color="#2563EB"
-            />,
+            <ShoppingBag size={20} color="#2563EB" />,
             'My Orders',
             'View your orders and purchases',
-            '#EEF4FF',
-            () => navigation?.navigate?.('Orders'),
+            '#EAF1FF',
+            () => goTo('Orders'),
+            ordersAnim,
           )}
 
           {renderOption(
-            <Heart
-              size={20}
-              color="#EF4444"
-            />,
+            <Heart size={20} color="#EF4444" />,
             'Favorites',
             'View your favorite products',
             '#FFF1F2',
-            handleFavorites,
+            () => goTo('Favorites'),
+            favoritesAnim,
           )}
 
           {renderOption(
-            <User
-              size={20}
-              color="#7C3AED"
-            />,
+            <User size={20} color="#7C3AED" />,
             'Personal Information',
             'Manage your profile information',
             '#F5F3FF',
-            () =>
-              navigation?.navigate?.(
-                'PersonalInformation',
-              ),
+            () => goTo('PersonalInformation'),
+            personalAnim,
           )}
 
           {renderOption(
-            <MapPin
-              size={20}
-              color="#F59E0B"
-            />,
+            <MapPin size={20} color="#F59E0B" />,
             'Saved Addresses',
             'Manage your delivery addresses',
             '#FFFBEB',
-            () =>
-              navigation?.navigate?.('Addresses'),
+            () => goTo('Addresses'),
+            addressAnim,
           )}
 
-          {/* ================================================= */}
-          {/* SETTINGS */}
-          {/* ================================================= */}
+          {/* =====================================
+              SETTINGS
+          ===================================== */}
 
           <Text style={styles.sectionTitle}>
             Settings
           </Text>
 
           {renderOption(
-            <Bell
-              size={20}
-              color="#2563EB"
-            />,
+            <Bell size={20} color="#2563EB" />,
             'Notifications',
             'Manage notification preferences',
-            '#EEF4FF',
-            () =>
-              navigation?.navigate?.(
-                'Notifications',
-              ),
+            '#EAF1FF',
+            () => goTo('Notifications'),
+            notificationsAnim,
           )}
 
           {renderOption(
-            <Settings
-              size={20}
-              color="#64748B"
-            />,
+            <Settings size={20} color="#64748B" />,
             'Settings',
             'Manage application settings',
             '#F1F5F9',
-            () =>
-              navigation?.navigate?.('Settings'),
+            () => goTo('Settings'),
+            settingsAnim,
           )}
 
           {renderOption(
-            <Shield
-              size={20}
-              color="#16A34A"
-            />,
+            <Shield size={20} color="#16A34A" />,
             'Privacy & Security',
             'Manage privacy and security',
             '#F0FDF4',
-            () =>
-              navigation?.navigate?.(
-                'PrivacySecurity',
-              ),
+            () => goTo('PrivacySecurity'),
+            privacyAnim,
           )}
 
-          {/* ================================================= */}
-          {/* CONTACT */}
-          {/* ================================================= */}
+          {/* =====================================
+              CONTACT
+          ===================================== */}
 
           <Text style={styles.sectionTitle}>
             Contact Information
           </Text>
 
-          <View style={styles.contactCard}>
+          <Animated.View
+            style={{
+              opacity: profileOpacity,
+              transform: [{translateY: contactAnim}],
+            }}>
 
-            <View style={styles.contactItem}>
+            <View style={styles.contactCard}>
 
-              <View
-                style={[
-                  styles.contactIcon,
-                  {
-                    backgroundColor: '#EEF4FF',
-                  },
-                ]}
-              >
-                <Mail
-                  size={18}
-                  color="#2563EB"
-                  strokeWidth={2.2}
+              <View style={styles.contactItem}>
+                <View
+                  style={[
+                    styles.contactIcon,
+                    {backgroundColor: '#EAF1FF'},
+                  ]}>
+                  <Mail
+                    size={18}
+                    color="#2563EB"
+                  />
+                </View>
+
+                <View style={styles.contactText}>
+                  <Text style={styles.contactLabel}>
+                    Email Address
+                  </Text>
+
+                  <Text
+                    style={styles.contactValue}
+                    numberOfLines={1}>
+                    johnwilliam@gmail.com
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.contactItem}>
+                <View
+                  style={[
+                    styles.contactIcon,
+                    {backgroundColor: '#F0FDF4'},
+                  ]}>
+                  <Phone
+                    size={18}
+                    color="#16A34A"
+                  />
+                </View>
+
+                <View style={styles.contactText}>
+                  <Text style={styles.contactLabel}>
+                    Phone Number
+                  </Text>
+
+                  <Text style={styles.contactValue}>
+                    +91 98765 43210
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* =====================================
+              LOGOUT
+          ===================================== */}
+
+          <Animated.View
+            style={{
+              opacity: profileOpacity,
+              transform: [{translateY: logoutAnim}],
+            }}>
+
+            <Pressable
+              onPress={handleLogout}
+              android_ripple={{color: '#FECACA'}}
+              style={({pressed}) => [
+                styles.logoutButton,
+                pressed && styles.logoutPressed,
+              ]}>
+
+              <View style={styles.logoutIcon}>
+                <LogOut
+                  size={20}
+                  color="#EF4444"
+                  strokeWidth={2.5}
                 />
               </View>
 
-              <View style={styles.contactText}>
-
-                <Text style={styles.contactLabel}>
-                  Email Address
+              <View style={styles.logoutContent}>
+                <Text style={styles.logoutTitle}>
+                  Logout
                 </Text>
 
-                <Text
-                  style={styles.contactValue}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  johnwilliam@gmail.com
+                <Text style={styles.logoutSubtitle}>
+                  Sign out from your account
                 </Text>
-
               </View>
 
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.contactItem}>
-
-              <View
-                style={[
-                  styles.contactIcon,
-                  {
-                    backgroundColor: '#F0FDF4',
-                  },
-                ]}
-              >
-                <Phone
-                  size={18}
-                  color="#16A34A"
-                  strokeWidth={2.2}
-                />
-              </View>
-
-              <View style={styles.contactText}>
-
-                <Text style={styles.contactLabel}>
-                  Phone Number
-                </Text>
-
-                <Text style={styles.contactValue}>
-                  +91 98765 43210
-                </Text>
-
-              </View>
-
-            </View>
-
-          </View>
-
-          {/* ================================================= */}
-          {/* LOGOUT */}
-          {/* ================================================= */}
-
-          <TouchableOpacity
-            style={styles.logoutButton}
-            activeOpacity={0.7}
-            onPress={handleLogout}
-          >
-
-            <View style={styles.logoutIcon}>
-
-              <LogOut
-                size={19}
+              <ChevronRight
+                size={18}
                 color="#EF4444"
-                strokeWidth={2.4}
               />
-
-            </View>
-
-            <View style={styles.logoutContent}>
-
-              <Text style={styles.logoutTitle}>
-                Logout
-              </Text>
-
-              <Text style={styles.logoutSubtitle}>
-                Sign out from your account
-              </Text>
-
-            </View>
-
-            <ChevronRight
-              size={18}
-              color="#EF4444"
-            />
-
-          </TouchableOpacity>
+            </Pressable>
+          </Animated.View>
 
           <Text style={styles.version}>
             ShopEase • Version 1.0.0
@@ -703,221 +672,267 @@ const ProfileScreen = ({
           <Text style={styles.bottomText}>
             Your shopping journey starts here ✨
           </Text>
-
         </ScrollView>
-
-        {/* ================================================= */}
-        {/* FOOTER */}
-        {/* ================================================= */}
-
-        <View style={styles.footerContainer}>
-
-          <Footer
-            activeTab="profile"
-            cartCount={cartCount}
-            onHomePress={handleHome}
-            onProductsPress={handleProducts}
-            onFavoritesPress={handleFavorites}
-            onCartPress={handleCart}
-            onProfilePress={handleProfile}
-          />
-
-        </View>
-
       </View>
 
+      {/* =====================================
+          LOGOUT MODAL
+      ===================================== */}
+
+      <Modal
+        visible={showLogoutAlert}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() =>
+          setShowLogoutAlert(false)
+        }>
+
+        <View style={styles.modalOverlay}>
+
+          <View style={styles.alertBox}>
+
+            <Pressable
+              onPress={() =>
+                setShowLogoutAlert(false)
+              }
+              hitSlop={10}
+              style={styles.closeAlertButton}>
+              <X
+                size={18}
+                color="#64748B"
+              />
+            </Pressable>
+
+            <View style={styles.alertIconCircle}>
+              <LogOut
+                size={30}
+                color="#EF4444"
+                strokeWidth={2.5}
+              />
+            </View>
+
+            <Text style={styles.alertTitle}>
+              Logout?
+            </Text>
+
+            <Text style={styles.alertMessage}>
+              Are you sure you want to logout
+              from your account?
+            </Text>
+
+            <View style={styles.alertButtons}>
+
+              <Pressable
+                onPress={() =>
+                  setShowLogoutAlert(false)
+                }
+                style={({pressed}) => [
+                  styles.cancelButton,
+                  pressed && styles.cancelPressed,
+                ]}>
+                <Text style={styles.cancelButtonText}>
+                  Cancel
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={confirmLogout}
+                style={({pressed}) => [
+                  styles.confirmButton,
+                  pressed && styles.confirmPressed,
+                ]}>
+
+                <CheckCircle
+                  size={18}
+                  color="#FFFFFF"
+                />
+
+                <Text style={styles.confirmButtonText}>
+                  Logout
+                </Text>
+              </Pressable>
+
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 export default ProfileScreen;
 
-// =========================================================
+// =====================================================
 // STYLES
-// =========================================================
+// =====================================================
 
 const styles = StyleSheet.create({
-
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7F9FF',
   },
 
   screen: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#fff',
   },
 
-  // =======================================================
+  // ===================================================
   // HEADER
-  // =======================================================
-
-  headerWrapper: {
-    backgroundColor: '#FFFFFF',
-
-    paddingHorizontal: 16,
-
-    paddingTop:
-      Platform.OS === 'android'
-        ? 10
-        : 5,
-
-    paddingBottom: 12,
-
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-
-    elevation: 4,
-
-    zIndex: 100,
-  },
+  // ===================================================
 
   header: {
-    minHeight: 58,
-     marginTop:30,
-    flexDirection: 'row',
+    minHeight: 76,
+    backgroundColor: '#F7F9FF',
 
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+
+    flexDirection: 'row',
     alignItems: 'center',
+
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF1F8',
   },
 
   backButton: {
-    width: 45,
-    height: 45,
+    width: 44,
+    height: 44,
 
-    borderRadius: 13,
+    borderRadius: 14,
 
-    backgroundColor: '#F1F5F9',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-
-    elevation: 3,
-
-    zIndex: 999,
-  },
-
-  headerTitleContainer: {
-    flex: 1,
-
-    marginLeft: 13,
-  },
-
-  headerTitle: {
-    fontSize: 21,
-
-    fontWeight: '900',
-
-    color: '#0F172A',
-  },
-
-  headerSubtitle: {
-    marginTop: 2,
-
-    fontSize: 10,
-
-    color: '#94A3B8',
-
-    fontWeight: '600',
-  },
-
-  editButton: {
-    width: 45,
-    height: 45,
-
-    borderRadius: 13,
-
-    backgroundColor: '#EEF4FF',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    borderWidth: 1,
-    borderColor: '#DCE8FF',
-
-    elevation: 2,
-  },
-
-  // =======================================================
-  // SCROLL
-  // =======================================================
-
-  scrollView: {
-    flex: 1,
-  },
-
-  scrollContent: {
-    paddingHorizontal: 16,
-
-    paddingTop: 20,
-
-    // Footer ke niche content hide nahi hoga
-    paddingBottom: 150,
-  },
-
-  // =======================================================
-  // PROFILE
-  // =======================================================
-
-  profileCard: {
     backgroundColor: '#FFFFFF',
 
-    borderRadius: 22,
-
-    padding: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
 
     borderWidth: 1,
     borderColor: '#E8EDFF',
 
-    elevation: 4,
-
-    shadowColor: '#1E3A8A',
-
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
-    shadowOpacity: 0.08,
-
-    shadowRadius: 10,
+    elevation: 2,
   },
 
-  profileTop: {
-    flexDirection: 'row',
+  backButtonPressed: {
+    backgroundColor: '#EAF1FF',
 
-    alignItems: 'center',
+    transform: [
+      {
+        scale: 0.94,
+      },
+    ],
   },
 
-  avatarWrapper: {
-    width: 76,
-    height: 76,
-
-    position: 'relative',
+  headerTitleContainer: {
+    flex: 1,
+    marginLeft: 12,
   },
 
-  avatar: {
-    width: 76,
-    height: 76,
+  headerTitle: {
+    fontSize: 19,
+    color: '#111827',
+    fontWeight: '900',
+  },
 
-    borderRadius: 38,
+  headerSubtitle: {
+    marginTop: 2,
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+
+  editButton: {
+    width: 44,
+    height: 44,
+
+    borderRadius: 14,
 
     backgroundColor: '#EAF1FF',
 
     alignItems: 'center',
     justifyContent: 'center',
 
-    borderWidth: 4,
-    borderColor: '#F8FAFF',
+    borderWidth: 1,
+    borderColor: '#D9E6FF',
+
+    elevation: 2,
+  },
+
+  editPressed: {
+    backgroundColor: '#DCE8FF',
+
+    transform: [
+      {
+        scale: 0.94,
+      },
+    ],
+  },
+
+  // ===================================================
+  // SCROLL
+  // ===================================================
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 35,
+  },
+
+  // ===================================================
+  // PROFILE CARD
+  // ===================================================
+
+  profileCard: {
+    backgroundColor: '#FFFFFF',
+
+    borderRadius: 22,
+
+    padding: 16,
+
+    borderWidth: 1,
+    borderColor: '#E8EDFF',
+
+    elevation: 3,
+
+    shadowColor: '#1E3A8A',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+  },
+
+  profileTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  avatarWrapper: {
+    width: 76,
+    height: 76,
+    position: 'relative',
+  },
+
+  avatarImage: {
+    width: 76,
+    height: 76,
+
+    borderRadius: 20,
+
+    borderWidth: 3,
+    borderColor: '#EAF1FF',
   },
 
   onlineDot: {
     position: 'absolute',
 
-    right: 0,
-    bottom: 1,
+    right: -2,
+    bottom: -2,
 
     width: 16,
     height: 16,
@@ -932,30 +947,21 @@ const styles = StyleSheet.create({
 
   profileInfo: {
     flex: 1,
-
     marginLeft: 14,
-
     minWidth: 0,
   },
 
   profileName: {
     fontSize: 19,
-
     fontWeight: '900',
-
-    color: '#0F172A',
-
-    marginBottom: 6,
+    color: '#111827',
+    marginBottom: 5,
   },
 
   infoRow: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     marginTop: 4,
-
-    minWidth: 0,
   },
 
   infoText: {
@@ -963,28 +969,36 @@ const styles = StyleSheet.create({
 
     marginLeft: 6,
 
-    fontSize: 10.5,
-
+    fontSize: 10,
     color: '#64748B',
-
-    fontWeight: '500',
+    fontWeight: '600',
   },
 
-  // =======================================================
+  profileLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+
+  locationText: {
+    marginLeft: 4,
+    fontSize: 9,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+
+  // ===================================================
   // STATS
-  // =======================================================
+  // ===================================================
 
   statsContainer: {
     flexDirection: 'row',
-
     alignItems: 'center',
 
-    marginTop: 18,
-
-    paddingTop: 15,
+    marginTop: 17,
+    paddingTop: 14,
 
     borderTopWidth: 1,
-
     borderTopColor: '#EEF2F7',
   },
 
@@ -992,9 +1006,7 @@ const styles = StyleSheet.create({
     flex: 1,
 
     flexDirection: 'row',
-
     alignItems: 'center',
-
     justifyContent: 'center',
   },
 
@@ -1004,47 +1016,39 @@ const styles = StyleSheet.create({
 
   statNumber: {
     fontSize: 14,
-
     fontWeight: '900',
-
-    color: '#0F172A',
+    color: '#111827',
   },
 
   statLabel: {
     marginTop: 1,
-
     fontSize: 8.5,
-
     color: '#94A3B8',
+    fontWeight: '600',
   },
 
   statDivider: {
     width: 1,
-
-    height: 30,
-
+    height: 28,
     backgroundColor: '#E2E8F0',
   },
 
-  // =======================================================
+  // ===================================================
   // SECTION
-  // =======================================================
+  // ===================================================
 
   sectionTitle: {
-    marginTop: 23,
+    marginTop: 22,
+    marginBottom: 9,
 
-    marginBottom: 10,
-
-    fontSize: 15,
-
+    fontSize: 14,
     fontWeight: '900',
-
-    color: '#0F172A',
+    color: '#111827',
   },
 
-  // =======================================================
+  // ===================================================
   // OPTION
-  // =======================================================
+  // ===================================================
 
   optionCard: {
     minHeight: 68,
@@ -1055,18 +1059,15 @@ const styles = StyleSheet.create({
 
     borderRadius: 17,
 
-    marginBottom: 9,
+    marginBottom: 8,
 
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
 
     flexDirection: 'row',
-
     alignItems: 'center',
-
     justifyContent: 'space-between',
 
     borderWidth: 1,
-
     borderColor: '#EEF2F7',
 
     elevation: 2,
@@ -1074,14 +1075,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
+  optionPressed: {
+    backgroundColor: '#F8FAFC',
+
+    transform: [
+      {
+        scale: 0.985,
+      },
+    ],
+  },
+
   optionLeft: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     flex: 1,
-
-    minWidth: 0,
   },
 
   optionIcon: {
@@ -1092,33 +1099,23 @@ const styles = StyleSheet.create({
 
     alignItems: 'center',
     justifyContent: 'center',
-
-    flexShrink: 0,
   },
 
   optionContent: {
     flex: 1,
-
-    marginLeft: 12,
-
-    minWidth: 0,
+    marginLeft: 11,
   },
 
   optionTitle: {
     fontSize: 13,
-
     fontWeight: '800',
-
-    color: '#0F172A',
+    color: '#111827',
   },
 
   optionSubtitle: {
     marginTop: 3,
-
-    fontSize: 9.5,
-
+    fontSize: 9,
     color: '#94A3B8',
-
     fontWeight: '500',
   },
 
@@ -1128,7 +1125,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 10,
 
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7F9FF',
 
     alignItems: 'center',
     justifyContent: 'center',
@@ -1136,9 +1133,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // =======================================================
+  // ===================================================
   // CONTACT
-  // =======================================================
+  // ===================================================
 
   contactCard: {
     backgroundColor: '#FFFFFF',
@@ -1146,25 +1143,23 @@ const styles = StyleSheet.create({
     borderRadius: 18,
 
     borderWidth: 1,
-
     borderColor: '#EEF2F7',
 
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
 
     elevation: 2,
   },
 
   contactItem: {
-    minHeight: 70,
+    minHeight: 67,
 
     flexDirection: 'row',
-
     alignItems: 'center',
   },
 
   contactIcon: {
-    width: 42,
-    height: 42,
+    width: 41,
+    height: 41,
 
     borderRadius: 13,
 
@@ -1174,44 +1169,34 @@ const styles = StyleSheet.create({
 
   contactText: {
     flex: 1,
-
-    marginLeft: 12,
-
-    minWidth: 0,
+    marginLeft: 11,
   },
 
   contactLabel: {
-    fontSize: 10,
-
+    fontSize: 9.5,
     color: '#94A3B8',
-
     fontWeight: '600',
   },
 
   contactValue: {
     marginTop: 4,
-
-    fontSize: 12,
-
-    color: '#0F172A',
-
+    fontSize: 11.5,
+    color: '#111827',
     fontWeight: '800',
   },
 
   divider: {
     height: 1,
-
     backgroundColor: '#EEF2F7',
-
-    marginLeft: 54,
+    marginLeft: 52,
   },
 
-  // =======================================================
+  // ===================================================
   // LOGOUT
-  // =======================================================
+  // ===================================================
 
   logoutButton: {
-    minHeight: 64,
+    minHeight: 66,
 
     width: '100%',
 
@@ -1220,23 +1205,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF5F5',
 
     borderWidth: 1,
-
     borderColor: '#FECACA',
 
     flexDirection: 'row',
-
     alignItems: 'center',
 
-    paddingHorizontal: 13,
+    paddingHorizontal: 12,
 
-    marginTop: 23,
+    marginTop: 22,
+
+    elevation: 2,
+
+    overflow: 'hidden',
+  },
+
+  logoutPressed: {
+    backgroundColor: '#FEE2E2',
+
+    transform: [
+      {
+        scale: 0.985,
+      },
+    ],
   },
 
   logoutIcon: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
 
-    borderRadius: 12,
+    borderRadius: 13,
 
     backgroundColor: '#FEE2E2',
 
@@ -1246,67 +1243,192 @@ const styles = StyleSheet.create({
 
   logoutContent: {
     flex: 1,
-
     marginLeft: 11,
   },
 
   logoutTitle: {
     fontSize: 13,
-
     fontWeight: '900',
-
     color: '#EF4444',
   },
 
   logoutSubtitle: {
     marginTop: 3,
-
     fontSize: 9,
-
     color: '#F87171',
   },
 
   version: {
     textAlign: 'center',
-
-    marginTop: 18,
-
-    fontSize: 10,
-
+    marginTop: 20,
+    fontSize: 9.5,
     color: '#94A3B8',
   },
 
   bottomText: {
     textAlign: 'center',
-
-    marginTop: 7,
-
-    fontSize: 10,
-
+    marginTop: 6,
+    marginBottom: 8,
+    fontSize: 9.5,
     color: '#CBD5E1',
-
-    marginBottom: 10,
   },
 
-  // =======================================================
-  // FOOTER
-  // =======================================================
+  // ===================================================
+  // MODAL
+  // ===================================================
 
-  footerContainer: {
-    position: 'absolute',
+  modalOverlay: {
+    flex: 1,
 
-    left: 0,
-    right: 0,
-    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.60)',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    paddingHorizontal: 20,
+  },
+
+  alertBox: {
+    width: Math.min(width - 40, 360),
 
     backgroundColor: '#FFFFFF',
 
-    borderTopWidth: 1,
+    borderRadius: 26,
 
-    borderTopColor: '#E5E7EB',
+    paddingHorizontal: 22,
+    paddingVertical: 25,
 
-    elevation: 15,
+    alignItems: 'center',
 
-    zIndex: 999,
+    elevation: 20,
+
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+  },
+
+  closeAlertButton: {
+    position: 'absolute',
+
+    right: 15,
+    top: 15,
+
+    width: 32,
+    height: 32,
+
+    borderRadius: 16,
+
+    backgroundColor: '#F1F5F9',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  alertIconCircle: {
+    width: 72,
+    height: 72,
+
+    borderRadius: 36,
+
+    backgroundColor: '#FFF1F2',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginTop: 5,
+    marginBottom: 15,
+
+    borderWidth: 1,
+    borderColor: '#FFE4E6',
+  },
+
+  alertTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#111827',
+  },
+
+  alertMessage: {
+    marginTop: 8,
+
+    fontSize: 13,
+    lineHeight: 20,
+
+    color: '#64748B',
+
+    textAlign: 'center',
+
+    paddingHorizontal: 10,
+  },
+
+  alertButtons: {
+    flexDirection: 'row',
+
+    width: '100%',
+
+    marginTop: 23,
+
+    gap: 10,
+  },
+
+  cancelButton: {
+    flex: 1,
+
+    height: 48,
+
+    borderRadius: 14,
+
+    backgroundColor: '#F1F5F9',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cancelPressed: {
+    backgroundColor: '#E2E8F0',
+  },
+
+  cancelButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#475569',
+  },
+
+  confirmButton: {
+    flex: 1,
+
+    height: 48,
+
+    borderRadius: 14,
+
+    backgroundColor: '#EF4444',
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    gap: 7,
+
+    elevation: 3,
+  },
+
+  confirmPressed: {
+    backgroundColor: '#DC2626',
+
+    transform: [
+      {
+        scale: 0.97,
+      },
+    ],
+  },
+
+  confirmButtonText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
 });

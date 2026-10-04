@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+
 import {
   View,
   Text,
@@ -25,21 +26,24 @@ import {
 
 /* eslint-disable react/prop-types */
 
-const LoginScreen = ({onLogin}) => {
+const LoginScreen = ({navigation}) => {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
 
-  // Main animations
+  // ================= MAIN ANIMATIONS =================
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
 
-  // Floating animations
+  // ================= FLOATING ANIMATIONS =================
+
   const product1 = useRef(new Animated.Value(0)).current;
   const product2 = useRef(new Animated.Value(0)).current;
   const product3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Main animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -62,7 +66,7 @@ const LoginScreen = ({onLogin}) => {
       }),
     ]).start();
 
-    // Product 1
+    // Product 1 animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(product1, {
@@ -81,7 +85,7 @@ const LoginScreen = ({onLogin}) => {
       ]),
     ).start();
 
-    // Product 2
+    // Product 2 animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(product2, {
@@ -100,7 +104,7 @@ const LoginScreen = ({onLogin}) => {
       ]),
     ).start();
 
-    // Product 3
+    // Product 3 animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(product3, {
@@ -129,13 +133,13 @@ const LoginScreen = ({onLogin}) => {
 
   // ================= NAME =================
 
-  const handleNameChange = text => {
+  const handleNameChange = (text: string) => {
     setName(text);
   };
 
   // ================= MOBILE =================
 
-  const handleMobileChange = text => {
+  const handleMobileChange = (text: string) => {
     const onlyNumbers = text.replace(/[^0-9]/g, '');
 
     if (onlyNumbers.length <= 10) {
@@ -146,18 +150,28 @@ const LoginScreen = ({onLogin}) => {
   // ================= CONTINUE =================
 
   const handleContinue = () => {
+    // Name validation
     if (name.trim().length < 2) {
       return;
     }
 
+    // Mobile validation
     if (mobile.length !== 10) {
       return;
     }
 
-    if (onLogin) {
-      onLogin(mobile);
-    }
+    // ================= IMPORTANT =================
+    // Continue Shopping button click
+    // Login -> OTP Verification
+    // ==============================================
+
+    navigation.navigate('OtpVerification', {
+      mobile: mobile,
+      name: name.trim(),
+    });
   };
+
+  // ================= VALIDATION =================
 
   const isValid =
     name.trim().length >= 2 &&
@@ -216,6 +230,8 @@ const LoginScreen = ({onLogin}) => {
     ],
   };
 
+  // ================= UI =================
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -224,13 +240,12 @@ const LoginScreen = ({onLogin}) => {
           Platform.OS === 'ios'
             ? 'padding'
             : undefined
-        }
-      >
+        }>
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
-        >
+          contentContainerStyle={styles.scrollContent}>
 
           {/* ================= HERO SECTION ================= */}
 
@@ -245,8 +260,7 @@ const LoginScreen = ({onLogin}) => {
                   },
                 ],
               },
-            ]}
-          >
+            ]}>
 
             {/* Background Circles */}
 
@@ -261,13 +275,14 @@ const LoginScreen = ({onLogin}) => {
                 styles.floatingProduct,
                 styles.productOne,
                 productOneStyle,
-              ]}
-            >
+              ]}>
+
               <ShoppingBag
                 size={28}
                 color="#2563EB"
                 strokeWidth={2.5}
               />
+
             </Animated.View>
 
             {/* Floating Star */}
@@ -277,13 +292,14 @@ const LoginScreen = ({onLogin}) => {
                 styles.floatingProduct,
                 styles.productTwo,
                 productTwoStyle,
-              ]}
-            >
+              ]}>
+
               <Star
                 size={25}
                 color="#F59E0B"
                 fill="#F59E0B"
               />
+
             </Animated.View>
 
             {/* Floating Sparkles */}
@@ -293,12 +309,13 @@ const LoginScreen = ({onLogin}) => {
                 styles.floatingProduct,
                 styles.productThree,
                 productThreeStyle,
-              ]}
-            >
+              ]}>
+
               <Sparkles
                 size={25}
                 color="#7C3AED"
               />
+
             </Animated.View>
 
             {/* LOGO */}
@@ -310,15 +327,18 @@ const LoginScreen = ({onLogin}) => {
                     scale: scaleAnim,
                   },
                 ],
-              }}
-            >
+              }}>
+
               <View style={styles.logoContainer}>
+
                 <ShoppingBag
                   size={42}
                   color="#FFFFFF"
                   strokeWidth={2.5}
                 />
+
               </View>
+
             </Animated.View>
 
             {/* BRAND NAME */}
@@ -340,6 +360,7 @@ const LoginScreen = ({onLogin}) => {
             <View style={styles.trustRow}>
 
               <View style={styles.trustItem}>
+
                 <ShieldCheck
                   size={15}
                   color="#2563EB"
@@ -348,11 +369,13 @@ const LoginScreen = ({onLogin}) => {
                 <Text style={styles.trustText}>
                   Secure
                 </Text>
+
               </View>
 
               <View style={styles.dot} />
 
               <View style={styles.trustItem}>
+
                 <Star
                   size={15}
                   color="#F59E0B"
@@ -362,11 +385,13 @@ const LoginScreen = ({onLogin}) => {
                 <Text style={styles.trustText}>
                   Trusted
                 </Text>
+
               </View>
 
               <View style={styles.dot} />
 
               <View style={styles.trustItem}>
+
                 <Sparkles
                   size={15}
                   color="#7C3AED"
@@ -375,12 +400,12 @@ const LoginScreen = ({onLogin}) => {
                 <Text style={styles.trustText}>
                   Fast
                 </Text>
+
               </View>
 
             </View>
 
           </Animated.View>
-
 
           {/* ================= LOGIN CARD ================= */}
 
@@ -389,6 +414,7 @@ const LoginScreen = ({onLogin}) => {
               styles.loginCard,
               {
                 opacity: fadeAnim,
+
                 transform: [
                   {
                     translateY: slideAnim,
@@ -398,15 +424,14 @@ const LoginScreen = ({onLogin}) => {
                   },
                 ],
               },
-            ]}
-          >
+            ]}>
 
             {/* HEADER */}
 
             <View style={styles.cardHeader}>
 
               <Text style={styles.welcome}>
-                Welcome Back 👋  
+                Welcome Back 👋
               </Text>
 
               <Text style={styles.cardSubtitle}>
@@ -414,7 +439,6 @@ const LoginScreen = ({onLogin}) => {
               </Text>
 
             </View>
-
 
             {/* ================= NAME ================= */}
 
@@ -427,10 +451,12 @@ const LoginScreen = ({onLogin}) => {
               <View style={styles.inputContainer}>
 
                 <View style={styles.inputIcon}>
+
                   <User
                     size={21}
                     color="#2563EB"
                   />
+
                 </View>
 
                 <TextInput
@@ -446,7 +472,6 @@ const LoginScreen = ({onLogin}) => {
 
             </View>
 
-
             {/* ================= MOBILE ================= */}
 
             <View style={styles.inputGroup}>
@@ -458,10 +483,12 @@ const LoginScreen = ({onLogin}) => {
               <View style={styles.inputContainer}>
 
                 <View style={styles.inputIcon}>
+
                   <Smartphone
                     size={21}
                     color="#2563EB"
                   />
+
                 </View>
 
                 <Text style={styles.countryCode}>
@@ -488,7 +515,6 @@ const LoginScreen = ({onLogin}) => {
 
             </View>
 
-
             {/* ================= BUTTON ================= */}
 
             <TouchableOpacity
@@ -498,37 +524,39 @@ const LoginScreen = ({onLogin}) => {
               ]}
               activeOpacity={0.85}
               onPress={handleContinue}
-              disabled={!isValid}
-            >
+              disabled={!isValid}>
 
               <Text style={styles.loginButtonText}>
                 Continue Shopping
               </Text>
 
               <View style={styles.arrowCircle}>
+
                 <ArrowRight
                   size={20}
                   color="#2563EB"
                   strokeWidth={2.8}
                 />
+
               </View>
 
             </TouchableOpacity>
-
 
             {/* ================= TERMS ================= */}
 
             <Text style={styles.termsText}>
               By continuing, you agree to our{' '}
+
               <Text style={styles.termsLink}>
                 Terms
               </Text>{' '}
+
               &{' '}
+
               <Text style={styles.termsLink}>
                 Privacy Policy
               </Text>
             </Text>
-
 
             {/* ================= BENEFITS ================= */}
 
@@ -537,13 +565,16 @@ const LoginScreen = ({onLogin}) => {
               <View style={styles.benefitItem}>
 
                 <View style={styles.benefitIcon}>
+
                   <ShieldCheck
                     size={18}
                     color="#2563EB"
                   />
+
                 </View>
 
                 <View>
+
                   <Text style={styles.benefitTitle}>
                     Secure
                   </Text>
@@ -551,24 +582,26 @@ const LoginScreen = ({onLogin}) => {
                   <Text style={styles.benefitText}>
                     100% Safe
                   </Text>
+
                 </View>
 
               </View>
 
-
               <View style={styles.benefitDivider} />
-
 
               <View style={styles.benefitItem}>
 
                 <View style={styles.benefitIcon}>
+
                   <Sparkles
                     size={18}
                     color="#7C3AED"
                   />
+
                 </View>
 
                 <View>
+
                   <Text style={styles.benefitTitle}>
                     Easy
                   </Text>
@@ -576,6 +609,7 @@ const LoginScreen = ({onLogin}) => {
                   <Text style={styles.benefitText}>
                     Quick Login
                   </Text>
+
                 </View>
 
               </View>
@@ -584,7 +618,6 @@ const LoginScreen = ({onLogin}) => {
 
           </Animated.View>
 
-
           {/* ================= FOOTER ================= */}
 
           <Text style={styles.footerText}>
@@ -592,13 +625,13 @@ const LoginScreen = ({onLogin}) => {
           </Text>
 
         </ScrollView>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 export default LoginScreen;
-
 
 /* ================================================= */
 /* ===================== STYLES ==================== */
@@ -675,10 +708,12 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
 
     shadowColor: '#2563EB',
+
     shadowOffset: {
       width: 0,
       height: 8,
     },
+
     shadowOpacity: 0.3,
     shadowRadius: 12,
 
@@ -721,10 +756,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     shadowColor: '#1E40AF',
+
     shadowOffset: {
       width: 0,
       height: 7,
     },
+
     shadowOpacity: 0.15,
     shadowRadius: 10,
 
@@ -788,10 +825,12 @@ const styles = StyleSheet.create({
     borderColor: '#EEF2FF',
 
     shadowColor: '#1E3A8A',
+
     shadowOffset: {
       width: 0,
       height: 12,
     },
+
     shadowOpacity: 0.12,
     shadowRadius: 20,
 
@@ -920,10 +959,12 @@ const styles = StyleSheet.create({
     marginTop: 3,
 
     shadowColor: '#2563EB',
+
     shadowOffset: {
       width: 0,
       height: 8,
     },
+
     shadowOpacity: 0.3,
     shadowRadius: 12,
 

@@ -15,33 +15,56 @@ import {
   User,
 } from 'lucide-react-native';
 
+import {
+  useNavigation,
+} from '@react-navigation/native';
+
+import type {
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
+
+import type {
+  RootStackParamList,
+} from '../navigation/AppNavigator';
+
+type NavigationProp =
+  NativeStackNavigationProp<RootStackParamList>;
+
 interface FooterProps {
   activeTab?: 'home' | 'products' | 'favorites' | 'cart' | 'profile';
   cartCount?: number;
-
-  onHomePress?: () => void;
-  onProductsPress?: () => void;
-  onFavoritesPress?: () => void;
-  onCartPress?: () => void;
-  onProfilePress?: () => void;
 }
 
 const Footer = ({
   activeTab = 'home',
   cartCount = 0,
-
-  onHomePress,
-  onProductsPress,
-  onFavoritesPress,
-  onCartPress,
-  onProfilePress,
 }: FooterProps) => {
+
+  const navigation = useNavigation<NavigationProp>();
+
+  // ==============================
+  // NAVIGATION FUNCTIONS
+  // ==============================
+
+  const goHome = () => {
+    navigation.navigate('Home');
+  };
+
+  const goCart = () => {
+    navigation.navigate('Cart');
+  };
+
+  const goProfile = () => {
+    navigation.navigate('Profile');
+  };
+
   const renderItem = (
     tab: FooterProps['activeTab'],
     icon: React.ReactNode,
     label: string,
-    onPress?: () => void,
+    onPress: () => void,
   ) => {
+
     const isActive = activeTab === tab;
 
     return (
@@ -50,6 +73,7 @@ const Footer = ({
         activeOpacity={0.75}
         onPress={onPress}
       >
+
         <View
           style={[
             styles.iconContainer,
@@ -67,6 +91,7 @@ const Footer = ({
         >
           {label}
         </Text>
+
       </TouchableOpacity>
     );
   };
@@ -100,7 +125,7 @@ const Footer = ({
 
         'Home',
 
-        onHomePress,
+        goHome,
       )}
 
       {/* ================= PRODUCTS ================= */}
@@ -124,7 +149,10 @@ const Footer = ({
 
         'Products',
 
-        onProductsPress,
+        () => {
+          // Products screen add hone ke baad:
+          // navigation.navigate('Products');
+        },
       )}
 
       {/* ================= FAVORITES ================= */}
@@ -153,7 +181,10 @@ const Footer = ({
 
         'Favorites',
 
-        onFavoritesPress,
+        () => {
+          // Favorites screen add hone ke baad:
+          // navigation.navigate('Favorites');
+        },
       )}
 
       {/* ================= CART ================= */}
@@ -161,49 +192,65 @@ const Footer = ({
       <TouchableOpacity
         style={styles.footerItem}
         activeOpacity={0.8}
-        onPress={onCartPress}
+        onPress={goCart}
       >
+
         <View style={styles.cartIconWrapper}>
 
           <View
             style={[
               styles.cartIconContainer,
-
+              activeTab === 'cart' &&
+                styles.activeIconContainer,
             ]}
           >
+
             <ShoppingCart
               size={21}
-              color="#94A3B8"
-              strokeWidth={1.8}
+              color={
+                activeTab === 'cart'
+                  ? '#EF4444'
+                  : '#94A3B8'
+              }
+              strokeWidth={
+                activeTab === 'cart'
+                  ? 2.5
+                  : 1.8
+              }
             />
+
           </View>
 
           {/* CART BADGE */}
 
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
+
               <Text style={styles.cartBadgeText}>
                 {cartCount > 99
                   ? '99+'
                   : cartCount}
               </Text>
+
             </View>
           )}
 
         </View>
 
-      <Text
-        style={[
-          styles.footerText,
-          {
-            color: activeTab === 'cart'
-              ? '#EF4444'
-              : '#94A3B8',
-          },
-        ]}
-      >
-        Cart
-      </Text>
+        <Text
+          style={[
+            styles.footerText,
+            {
+              color:
+                activeTab === 'cart'
+                  ? '#EF4444'
+                  : '#94A3B8',
+            },
+          ]}
+        >
+          Cart
+        </Text>
+
       </TouchableOpacity>
 
       {/* ================= PROFILE ================= */}
@@ -227,7 +274,7 @@ const Footer = ({
 
         'Profile',
 
-        onProfilePress,
+        goProfile,
       )}
 
     </View>
@@ -236,13 +283,12 @@ const Footer = ({
 
 export default Footer;
 
+
 /* ================================================= */
 /* ===================== STYLES ==================== */
 /* ================================================= */
 
 const styles = StyleSheet.create({
-
-  /* ================= FOOTER ================= */
 
   footer: {
     position: 'absolute',
@@ -283,8 +329,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
 
-  /* ================= ITEM ================= */
-
   footerItem: {
     flex: 1,
 
@@ -296,8 +340,6 @@ const styles = StyleSheet.create({
 
     position: 'relative',
   },
-
-  /* ================= ICON ================= */
 
   iconContainer: {
     width: 39,
@@ -315,8 +357,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAF1FF',
   },
 
-  /* ================= TEXT ================= */
-
   footerText: {
     marginTop: 4,
 
@@ -333,31 +373,29 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  /* ================= CART ================= */
+  cartIconWrapper: {
+    width: 43,
 
+    height: 36,
 
+    alignItems: 'center',
 
-cartIconWrapper: {
-  width: 43,
-  height: 36,
-  alignItems: 'center',
-  justifyContent: 'center',
-  position: 'relative',
-},
+    justifyContent: 'center',
 
-cartIconContainer: {
-  width: 39,
-  height: 32,
-  borderRadius: 12,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
+    position: 'relative',
+  },
 
-cartIconActive: {
-  backgroundColor: '#EAF1FF',
-},
+  cartIconContainer: {
+    width: 39,
 
-  /* ================= CART BADGE ================= */
+    height: 32,
+
+    borderRadius: 12,
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+  },
 
   cartBadge: {
     position: 'absolute',

@@ -1,5 +1,4 @@
 import React, {useEffect, useRef} from 'react';
-
 import {
   View,
   Text,
@@ -9,6 +8,8 @@ import {
   Easing,
 } from 'react-native';
 
+import {useNavigation} from '@react-navigation/native';
+
 import {
   ShoppingBag,
   Sparkles,
@@ -17,6 +18,8 @@ import {
 } from 'lucide-react-native';
 
 const SplashScreen = () => {
+  const navigation = useNavigation();
+
   // ================= ANIMATION VALUES =================
 
   const logoScale = useRef(
@@ -50,7 +53,14 @@ const SplashScreen = () => {
   // ================= START ANIMATION =================
 
   useEffect(() => {
-    // Logo animation
+    // ================= SPLASH -> LOGIN =================
+
+    const timer = setTimeout(() => {
+      navigation.replace('Login' as never);
+    }, 3000);
+
+    // ================= LOGO ANIMATION =================
+
     Animated.parallel([
       Animated.spring(logoScale, {
         toValue: 1,
@@ -66,7 +76,8 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Text animation
+    // ================= TEXT ANIMATION =================
+
     Animated.parallel([
       Animated.timing(contentOpacity, {
         toValue: 1,
@@ -84,7 +95,8 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Floating circle 1
+    // ================= FLOATING CIRCLE 1 =================
+
     Animated.loop(
       Animated.sequence([
         Animated.timing(circleOne, {
@@ -103,7 +115,8 @@ const SplashScreen = () => {
       ]),
     ).start();
 
-    // Floating circle 2
+    // ================= FLOATING CIRCLE 2 =================
+
     Animated.loop(
       Animated.sequence([
         Animated.timing(circleTwo, {
@@ -122,7 +135,8 @@ const SplashScreen = () => {
       ]),
     ).start();
 
-    // Sparkle rotation
+    // ================= SPARKLE ROTATION =================
+
     Animated.loop(
       Animated.timing(sparkleRotate, {
         toValue: 1,
@@ -131,7 +145,14 @@ const SplashScreen = () => {
         useNativeDriver: true,
       }),
     ).start();
+
+    // ================= CLEANUP =================
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [
+    navigation,
     logoScale,
     logoOpacity,
     contentOpacity,
@@ -188,6 +209,8 @@ const SplashScreen = () => {
     ],
   };
 
+  // ================= UI =================
+
   return (
     <View style={styles.container}>
 
@@ -209,8 +232,7 @@ const SplashScreen = () => {
           styles.floatingIcon,
           styles.floatingOne,
           circleOneStyle,
-        ]}
-      >
+        ]}>
         <Package
           size={25}
           color="#2563EB"
@@ -225,8 +247,7 @@ const SplashScreen = () => {
           styles.floatingIcon,
           styles.floatingTwo,
           circleTwoStyle,
-        ]}
-      >
+        ]}>
         <Star
           size={23}
           color="#F59E0B"
@@ -241,15 +262,14 @@ const SplashScreen = () => {
           styles.sparkle,
           styles.sparkleOne,
           sparkleStyle,
-        ]}
-      >
+        ]}>
         <Sparkles
           size={27}
           color="#7C3AED"
         />
       </Animated.View>
 
-      {/* ================= MAIN CONTENT ================= */}
+      {/* ================= MAIN LOGO ================= */}
 
       <Animated.View
         style={[
@@ -262,14 +282,9 @@ const SplashScreen = () => {
               },
             ],
           },
-        ]}
-      >
-
-        {/* Logo Shadow */}
+        ]}>
 
         <View style={styles.logoShadow}>
-
-          {/* Logo */}
 
           <View style={styles.logoContainer}>
 
@@ -282,10 +297,12 @@ const SplashScreen = () => {
             {/* Small sparkle */}
 
             <View style={styles.logoSparkle}>
+
               <Sparkles
                 size={17}
                 color="#FFFFFF"
               />
+
             </View>
 
           </View>
@@ -293,7 +310,6 @@ const SplashScreen = () => {
         </View>
 
       </Animated.View>
-
 
       {/* ================= TEXT ================= */}
 
@@ -308,8 +324,7 @@ const SplashScreen = () => {
               },
             ],
           },
-        ]}
-      >
+        ]}>
 
         <Text style={styles.appName}>
           ShopEase
@@ -332,10 +347,12 @@ const SplashScreen = () => {
           <View style={styles.trustItem}>
 
             <View style={styles.trustIcon}>
+
               <Package
                 size={15}
                 color="#2563EB"
               />
+
             </View>
 
             <Text style={styles.trustText}>
@@ -344,18 +361,18 @@ const SplashScreen = () => {
 
           </View>
 
-
           <View style={styles.divider} />
-
 
           <View style={styles.trustItem}>
 
             <View style={styles.trustIcon}>
+
               <Star
                 size={15}
                 color="#F59E0B"
                 fill="#F59E0B"
               />
+
             </View>
 
             <Text style={styles.trustText}>
@@ -367,7 +384,6 @@ const SplashScreen = () => {
         </View>
 
       </Animated.View>
-
 
       {/* ================= BOTTOM ================= */}
 
@@ -459,10 +475,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     shadowColor: '#1E3A8A',
+
     shadowOffset: {
       width: 0,
       height: 7,
     },
+
     shadowOpacity: 0.12,
     shadowRadius: 12,
 
@@ -504,10 +522,12 @@ const styles = StyleSheet.create({
 
   logoShadow: {
     shadowColor: '#2563EB',
+
     shadowOffset: {
       width: 0,
       height: 15,
     },
+
     shadowOpacity: 0.28,
     shadowRadius: 20,
 
@@ -623,10 +643,12 @@ const styles = StyleSheet.create({
     marginRight: 6,
 
     shadowColor: '#1E3A8A',
+
     shadowOffset: {
       width: 0,
       height: 3,
     },
+
     shadowOpacity: 0.08,
     shadowRadius: 5,
 

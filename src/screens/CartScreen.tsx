@@ -1,5 +1,4 @@
-
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {
   View,
@@ -8,13 +7,48 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
-  StatusBar,
+  Modal,
+  Animated,
+  Easing,
 } from 'react-native';
 
+import {
+  ArrowLeft,
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingCart,
+  ChevronRight,
+  Tag,
+  Check,
+  AlertTriangle,
+  X,
+} from 'lucide-react-native';
 
-const CartScreen = ({onBack}) => {
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
 
-  const [cartItems, setCartItems] = useState([
+import {RootStackParamList} from '../navigation/AppNavigator';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
+
+type CartItem = {
+  id: string;
+  name: string;
+  size: string;
+  color: string;
+  price: number;
+  quantity: number;
+  image: string;
+};
+
+type AlertType = 'success' | 'warning' | 'error';
+
+const CartScreen = ({navigation}: Props) => {
+  // =========================================================
+  // CART DATA
+  // =========================================================
+
+  const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: '1',
       name: 'Premium T-Shirt',
@@ -23,9 +57,8 @@ const CartScreen = ({onBack}) => {
       price: 799,
       quantity: 1,
       image:
-        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500',
+        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600',
     },
-
     {
       id: '2',
       name: 'Casual Sneakers',
@@ -34,19 +67,8 @@ const CartScreen = ({onBack}) => {
       price: 1499,
       quantity: 1,
       image:
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600',
     },
-    {
-      id: '5',
-      name: 'Casual Sneakers',
-      size: '9',
-      color: 'White',
-      price: 1499,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
-    },
-
     {
       id: '3',
       name: 'Classic Backpack',
@@ -55,69 +77,223 @@ const CartScreen = ({onBack}) => {
       price: 999,
       quantity: 2,
       image:
-        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500',
-    },
-    {
-      id: '4',
-      name: 'Classic Backpack',
-      size: 'Standard',
-      color: 'Blue',
-      price: 999,
-      quantity: 2,
-      image:
-        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500',
+        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600',
     },
   ]);
 
+  // =========================================================
+  // SWEET ALERT STATES
+  // =========================================================
 
-  // =====================================================
-  // QUANTITY
-  // =====================================================
+  const [alertVisible, setAlertVisible] = useState(false);
 
-  const updateQuantity = (id, type) => {
+  const [alertType, setAlertType] =
+    useState<AlertType>('success');
 
-    setCartItems(prev =>
-      prev.map(item => {
+  const [alertTitle, setAlertTitle] = useState('');
 
+  const [alertMessage, setAlertMessage] = useState('');
+
+  const [alertConfirmText, setAlertConfirmText] =
+    useState('OK');
+
+  const [alertCancelText, setAlertCancelText] =
+    useState('');
+
+  const [showCancelButton, setShowCancelButton] =
+    useState(false);
+
+  const [confirmButtonColor, setConfirmButtonColor] =
+    useState('#2563EB');
+
+  const alertConfirmAction =
+    useRef<(() => void) | null>(null);
+
+  // =========================================================
+  // ALERT ANIMATION
+  // =========================================================
+
+  const alertScale = useRef(
+    new Animated.Value(0.75),
+  ).current;
+
+  const alertOpacity = useRef(
+    new Animated.Value(0),
+  ).current;
+
+  useEffect(() => {
+    if (alertVisible) {
+      alertScale.setValue(0.75);
+      alertOpacity.setValue(0);
+
+      Animated.parallel([
+        Animated.spring(alertScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+
+        Animated.timing(alertOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [alertVisible, alertScale, alertOpacity]);
+
+  // =========================================================
+  // SHOW SWEET ALERT
+  // =========================================================
+
+  const showSweetAlert = ({
+    type,
+    title,
+    message,
+    confirmText = 'OK',
+    cancelText = '',
+    showCancel = false,
+    buttonColor = '#2563EB',
+    onConfirm,
+  }: {
+    type: AlertType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    showCancel?: boolean;
+    buttonColor?: string;
+    onConfirm?: () => void;
+  }) => {
+    setAlertType(type);
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertConfirmText(confirmText);
+    setAlertCancelText(cancelText);
+    setShowCancelButton(showCancel);
+    setConfirmButtonColor(buttonColor);
+
+    alertConfirmAction.current =
+      onConfirm || null;
+
+    setAlertVisible(true);
+  };
+
+  // =========================================================
+  // CLOSE ALERT
+  // =========================================================
+
+  const closeSweetAlert = () => {
+    Animated.parallel([
+      Animated.timing(alertScale, {
+        toValue: 0.85,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+
+      Animated.timing(alertOpacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setAlertVisible(false);
+      alertConfirmAction.current = null;
+    });
+  };
+
+  // =========================================================
+  // ALERT CONFIRM
+  // =========================================================
+
+  const handleAlertConfirm = () => {
+    const action = alertConfirmAction.current;
+
+    closeSweetAlert();
+
+    if (action) {
+      setTimeout(() => {
+        action();
+      }, 180);
+    }
+  };
+
+  // =========================================================
+  // UPDATE QUANTITY
+  // =========================================================
+
+  const updateQuantity = (
+    id: string,
+    type: 'increase' | 'decrease',
+  ) => {
+    setCartItems(prevItems =>
+      prevItems.map(item => {
         if (item.id !== id) {
           return item;
         }
 
-        let quantity = item.quantity;
+        let newQuantity = item.quantity;
 
         if (type === 'increase') {
-          quantity += 1;
+          newQuantity = item.quantity + 1;
         }
 
-        if (type === 'decrease' && quantity > 1) {
-          quantity -= 1;
+        if (type === 'decrease') {
+          newQuantity = Math.max(
+            1,
+            item.quantity - 1,
+          );
         }
 
         return {
           ...item,
-          quantity,
+          quantity: newQuantity,
         };
       }),
     );
   };
 
+  // =========================================================
+  // DELETE ITEM
+  // =========================================================
 
-  // =====================================================
-  // REMOVE
-  // =====================================================
+  const removeItem = (item: CartItem) => {
+    showSweetAlert({
+      type: 'warning',
+      title: 'Remove Item?',
+      message: `${item.name} will be removed from your cart.`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      showCancel: true,
+      buttonColor: '#DC2626',
 
-  const removeItem = id => {
+      onConfirm: () => {
+        setCartItems(prevItems =>
+          prevItems.filter(
+            cartItem => cartItem.id !== item.id,
+          ),
+        );
 
-    setCartItems(prev =>
-      prev.filter(item => item.id !== id),
-    );
-
+        setTimeout(() => {
+          showSweetAlert({
+            type: 'success',
+            title: 'Removed Successfully',
+            message:
+              'The product has been removed from your cart.',
+            confirmText: 'OK',
+            showCancel: false,
+            buttonColor: '#2563EB',
+          });
+        }, 250);
+      },
+    });
   };
 
-
-  // =====================================================
-  // PRICE
-  // =====================================================
+  // =========================================================
+  // PRICE CALCULATION
+  // =========================================================
 
   const subtotal = cartItems.reduce(
     (total, item) =>
@@ -125,447 +301,735 @@ const CartScreen = ({onBack}) => {
     0,
   );
 
-  const delivery = subtotal > 999 ? 0 : 49;
+  const deliveryCharge =
+    subtotal > 999 ? 0 : 49;
 
   const discount =
     subtotal > 2000 ? 200 : 0;
 
   const total =
-    subtotal + delivery - discount;
+    subtotal +
+    deliveryCharge -
+    discount;
 
+  // =========================================================
+  // CHECKOUT
+  // =========================================================
 
-  // =====================================================
-  // PRODUCT ITEM
-  // =====================================================
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      showSweetAlert({
+        type: 'warning',
+        title: 'Your Cart is Empty',
+        message:
+          'Please add some products before proceeding to checkout.',
+        confirmText: 'OK',
+        showCancel: false,
+        buttonColor: '#2563EB',
+      });
 
-  const renderItem = ({item}) => (
+      return;
+    }
 
-    <View style={styles.productCard}>
+    showSweetAlert({
+      type: 'warning',
+      title: 'Proceed to Checkout?',
+      message: `Your total amount is ₹${total.toLocaleString(
+        'en-IN',
+      )}. Do you want to continue?`,
+      confirmText: 'Proceed',
+      cancelText: 'Cancel',
+      showCancel: true,
+      buttonColor: '#2563EB',
 
-      <Image
-        source={{uri: item.image}}
-        style={styles.productImage}
-      />
+      onConfirm: () => {
+        setTimeout(() => {
+          showSweetAlert({
+            type: 'success',
+            title: 'Order Successful 🎉',
+            message:
+              'Your order has been placed successfully.',
+            confirmText: 'Continue',
+            showCancel: false,
+            buttonColor: '#2563EB',
 
-      <View style={styles.productInfo}>
+            onConfirm: () => {
+              // Future:
+              // navigation.navigate('OrderDetails')
+            },
+          });
+        }, 250);
+      },
+    });
+  };
 
-        <View style={styles.productTopRow}>
+  // =========================================================
+  // RENDER CART ITEM
+  // =========================================================
 
-          <Text
-            style={styles.productName}
-            numberOfLines={2}
-          >
-            {item.name}
-          </Text>
+  const renderCartItem = ({
+    item,
+  }: {
+    item: CartItem;
+  }) => {
+    return (
+      <View style={styles.cartCard}>
+        {/* PRODUCT IMAGE */}
 
-          <TouchableOpacity
-            onPress={() => removeItem(item.id)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.deleteIcon}>
-              🗑
-            </Text>
-          </TouchableOpacity>
-
+        <View style={styles.imageContainer}>
+          <Image
+            source={{uri: item.image}}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
         </View>
 
+        {/* PRODUCT DETAILS */}
 
-        <Text style={styles.productDetails}>
-          {item.color} • {item.size}
-        </Text>
-
-
-        <Text style={styles.price}>
-          ₹{item.price.toLocaleString('en-IN')}
-        </Text>
-
-
-        <View style={styles.bottomRow}>
-
-          <View style={styles.quantityContainer}>
-
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() =>
-                updateQuantity(
-                  item.id,
-                  'decrease',
-                )
-              }
-            >
-              <Text style={styles.quantityButtonText}>
-                −
-              </Text>
-            </TouchableOpacity>
-
-
-            <Text style={styles.quantity}>
-              {item.quantity}
+        <View style={styles.productDetails}>
+          <View style={styles.productTopRow}>
+            <Text
+              style={styles.productName}
+              numberOfLines={2}>
+              {item.name}
             </Text>
 
-
             <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() =>
-                updateQuantity(
-                  item.id,
-                  'increase',
-                )
-              }
-            >
-              <Text style={styles.quantityButtonText}>
-                +
-              </Text>
+              activeOpacity={0.7}
+              onPress={() => removeItem(item)}
+              style={styles.deleteButton}>
+              <Trash2
+                size={18}
+                color="#EF4444"
+              />
             </TouchableOpacity>
-
           </View>
 
-
-          <Text style={styles.itemTotal}>
-            ₹
-            {(
-              item.price *
-              item.quantity
-            ).toLocaleString('en-IN')}
+          <Text style={styles.productMeta}>
+            Size: {item.size}
           </Text>
 
+          <Text style={styles.productMeta}>
+            Color: {item.color}
+          </Text>
+
+          {/* PRICE + QUANTITY */}
+
+          <View style={styles.bottomRow}>
+            <Text style={styles.priceText}>
+              ₹
+              {(
+                item.price *
+                item.quantity
+              ).toLocaleString('en-IN')}
+            </Text>
+
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() =>
+                  updateQuantity(
+                    item.id,
+                    'decrease',
+                  )
+                }
+                style={styles.quantityButton}>
+                <Minus
+                  size={15}
+                  color="#111827"
+                />
+              </TouchableOpacity>
+
+              <Text style={styles.quantityText}>
+                {item.quantity}
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() =>
+                  updateQuantity(
+                    item.id,
+                    'increase',
+                  )
+                }
+                style={styles.quantityButton}>
+                <Plus
+                  size={15}
+                  color="#111827"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // =========================================================
+  // EMPTY CART
+  // =========================================================
+
+  const renderEmptyCart = () => {
+    return (
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIcon}>
+          <ShoppingCart
+            size={50}
+            color="#2563EB"
+          />
         </View>
 
+        <Text style={styles.emptyTitle}>
+          Your Cart is Empty
+        </Text>
+
+        <Text style={styles.emptyMessage}>
+          Looks like you haven't added
+          {'\n'}
+          anything to your cart yet.
+        </Text>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.shopButton}
+          onPress={() =>
+            navigation.navigate('Home')
+          }>
+          <Text style={styles.shopButtonText}>
+            Start Shopping
+          </Text>
+
+          <ChevronRight
+            size={20}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
       </View>
+    );
+  };
 
-    </View>
-  );
+  // =========================================================
+  // SWEET ALERT ICON
+  // =========================================================
 
+  const renderAlertIcon = () => {
+    if (alertType === 'success') {
+      return (
+        <View
+          style={[
+            styles.alertIconCircle,
+            styles.successIconCircle,
+          ]}>
+          <Check
+            size={34}
+            color="#16A34A"
+            strokeWidth={3}
+          />
+        </View>
+      );
+    }
 
-  // =====================================================
-  // SCREEN
-  // =====================================================
+    if (alertType === 'error') {
+      return (
+        <View
+          style={[
+            styles.alertIconCircle,
+            styles.errorIconCircle,
+          ]}>
+          <X
+            size={34}
+            color="#DC2626"
+            strokeWidth={3}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View
+        style={[
+          styles.alertIconCircle,
+          styles.warningIconCircle,
+        ]}>
+        <AlertTriangle
+          size={34}
+          color="#F59E0B"
+          strokeWidth={2.5}
+        />
+      </View>
+    );
+  };
+
+  // =========================================================
+  // SWEET ALERT MODAL
+  // =========================================================
+
+  const renderSweetAlert = () => {
+    return (
+      <Modal
+        visible={alertVisible}
+        transparent
+        animationType="none"
+        statusBarTranslucent>
+        <View style={styles.alertOverlay}>
+          <Animated.View
+            style={[
+              styles.alertBox,
+              {
+                opacity: alertOpacity,
+                transform: [
+                  {
+                    scale: alertScale,
+                  },
+                ],
+              },
+            ]}>
+            {renderAlertIcon()}
+
+            <Text style={styles.alertTitle}>
+              {alertTitle}
+            </Text>
+
+            <Text style={styles.alertMessage}>
+              {alertMessage}
+            </Text>
+
+            <View
+              style={[
+                styles.alertButtonsContainer,
+                !showCancelButton &&
+                  styles.singleButtonContainer,
+              ]}>
+              {showCancelButton && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.cancelAlertButton}
+                  onPress={closeSweetAlert}>
+                  <Text style={styles.cancelAlertText}>
+                    {alertCancelText}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[
+                  styles.confirmAlertButton,
+                  {
+                    backgroundColor:
+                      confirmButtonColor,
+                    width: showCancelButton
+                      ? '48%'
+                      : '100%',
+                  },
+                ]}
+                onPress={handleAlertConfirm}>
+                <Text style={styles.confirmAlertText}>
+                  {alertConfirmText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    );
+  };
+
+  // =========================================================
+  // MAIN UI
+  // =========================================================
 
   return (
-
     <View style={styles.container}>
-
-      {/* STATUS BAR */}
-
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#FFFFFF"
-        translucent={false}
-        hidden={false}
-      />
-
-
       {/* HEADER */}
 
       <View style={styles.header}>
+        {/* BACK BUTTON */}
 
         <TouchableOpacity
-          style={styles.backButton}
-          activeOpacity={0.7}
-          onPress={onBack}
-        >
-          <Text style={styles.backIcon}>
-            ‹ aa
-          </Text>
+          activeOpacity={0.8}
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <ArrowLeft
+            size={21}
+            color="#334155"
+            strokeWidth={2.2}
+          />
         </TouchableOpacity>
 
+        {/* TITLE */}
 
-        <View style={styles.headerTitleContainer}>
-
+        <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
             My Cart
           </Text>
 
           <Text style={styles.headerSubtitle}>
-            {cartItems.length} items
+            {cartItems.length}{' '}
+            {cartItems.length === 1
+              ? 'item'
+              : 'items'}
           </Text>
-
         </View>
 
+        {/* CART ICON */}
+
+        <View style={styles.headerRight}>
+          <ShoppingCart
+            size={21}
+            color="#2563EB"
+            strokeWidth={2.2}
+          />
+
+          {cartItems.length > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>
+                {cartItems.length}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
+      {/* PRODUCTS + SUMMARY */}
 
-      {/* CART LIST */}
+      {cartItems.length === 0 ? (
+        renderEmptyCart()
+      ) : (
+        <View style={styles.content}>
+          {/* PRODUCT LIST */}
 
-      <FlatList
-        data={cartItems}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+          <FlatList
+            data={cartItems}
+            keyExtractor={item => item.id}
+            renderItem={renderCartItem}
+            showsVerticalScrollIndicator={false}
+            style={styles.productList}
+            contentContainerStyle={
+              styles.listContent
+            }
+          />
 
-        ListEmptyComponent={
+          {/* ORDER SUMMARY */}
 
-          <View style={styles.emptyContainer}>
+          <View style={styles.summaryContainer}>
+            <View style={styles.summaryHeader}>
+              <View style={styles.summaryTitleRow}>
+                <Tag
+                  size={18}
+                  color="#2563EB"
+                />
 
-            <Text style={styles.emptyIcon}>
-              🛒
-            </Text>
-
-            <Text style={styles.emptyTitle}>
-              Your cart is empty
-            </Text>
-
-            <Text style={styles.emptyText}>
-              Add some products to your cart.
-            </Text>
-
-          </View>
-
-        }
-      />
-
-
-      {/* BOTTOM SUMMARY */}
-
-      {cartItems.length > 0 && (
-
-        <View style={styles.bottomContainer}>
-
-          <View style={styles.summaryRow}>
-
-            <Text style={styles.summaryLabel}>
-              Subtotal
-            </Text>
-
-            <Text style={styles.summaryValue}>
-              ₹{subtotal.toLocaleString('en-IN')}
-            </Text>
-
-          </View>
-
-
-          <View style={styles.summaryRow}>
-
-            <Text style={styles.summaryLabel}>
-              Delivery
-            </Text>
-
-            <Text style={styles.deliveryValue}>
-              {delivery === 0
-                ? 'FREE'
-                : `₹${delivery}`}
-            </Text>
-
-          </View>
-
-
-          {discount > 0 && (
-
-            <View style={styles.summaryRow}>
-
-              <Text style={styles.summaryLabel}>
-                Discount
-              </Text>
-
-              <Text style={styles.discountValue}>
-                -₹{discount}
-              </Text>
-
+                <Text style={styles.summaryTitle}>
+                  Order Summary
+                </Text>
+              </View>
             </View>
 
-          )}
+            {/* SUBTOTAL */}
 
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>
+                Subtotal
+              </Text>
 
-          <View style={styles.divider} />
+              <Text style={styles.summaryValue}>
+                ₹
+                {subtotal.toLocaleString(
+                  'en-IN',
+                )}
+              </Text>
+            </View>
 
+            {/* DELIVERY */}
 
-          <View style={styles.totalRow}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>
+                Delivery
+              </Text>
 
-            <Text style={styles.totalLabel}>
-              Total
-            </Text>
+              <Text
+                style={[
+                  styles.summaryValue,
+                  deliveryCharge === 0 &&
+                    styles.freeText,
+                ]}>
+                {deliveryCharge === 0
+                  ? 'FREE'
+                  : `₹${deliveryCharge}`}
+              </Text>
+            </View>
 
-            <Text style={styles.totalValue}>
-              ₹{total.toLocaleString('en-IN')}
-            </Text>
+            {/* DISCOUNT */}
 
+            {discount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Discount
+                </Text>
+
+                <Text style={styles.discountText}>
+                  - ₹
+                  {discount.toLocaleString(
+                    'en-IN',
+                  )}
+                </Text>
+              </View>
+            )}
+
+            <View
+              style={styles.summaryDivider}
+            />
+
+            {/* TOTAL */}
+
+            <View
+              style={[
+                styles.summaryRow,
+                styles.totalRow,
+              ]}>
+              <Text style={styles.totalLabel}>
+                Total
+              </Text>
+
+              <Text style={styles.totalValue}>
+                ₹
+                {total.toLocaleString(
+                  'en-IN',
+                )}
+              </Text>
+            </View>
+
+            {/* CHECKOUT */}
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={handleCheckout}
+              style={styles.checkoutButton}>
+              <Text
+                style={
+                  styles.checkoutButtonText
+                }>
+                Proceed to Checkout
+              </Text>
+
+              <ChevronRight
+                size={21}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
           </View>
-
-
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            activeOpacity={0.85}
-          >
-
-            <Text style={styles.checkoutText}>
-              Proceed to Checkout
-            </Text>
-
-            <Text style={styles.checkoutArrow}>
-              →
-            </Text>
-
-          </TouchableOpacity>
-
         </View>
-
       )}
 
+      {/* SWEET ALERT */}
+
+      {renderSweetAlert()}
     </View>
   );
 };
 
-
 export default CartScreen;
 
-
-// =====================================================
+// =========================================================
 // STYLES
-// =====================================================
+// =========================================================
 
 const styles = StyleSheet.create({
+  // =======================================================
+  // CONTAINER
+  // =======================================================
 
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7F9FF',
   },
 
-
-  // ===================================================
+  // =======================================================
   // HEADER
-  // ===================================================
+  // =======================================================
 
   header: {
-    height: 125,
+    height: 76,
+    marginTop:30,
+    backgroundColor: '#F7F9FF',
 
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
 
     flexDirection: 'row',
-    alignItems: 'flex-end',
-
-    paddingHorizontal: 16,
-
-    paddingBottom: 18,
-
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F7',
-
-    elevation: 4,
-  },
-
-
-  backButton: {
-    width: 44,
-    height: 44,
-
-    borderRadius: 13,
-
-    backgroundColor: '#F1F5F9',
-
-    justifyContent: 'center',
     alignItems: 'center',
 
-    marginRight: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF1F8',
   },
 
+  backButton: {
+    width: 42,
+    height: 42,
 
-  backIcon: {
-    fontSize: 32,
-    lineHeight: 35,
+    borderRadius: 14,
 
-    color: '#111827',
-
-    marginTop: -3,
-  },
-
-
-  headerTitleContainer: {
-    justifyContent: 'center',
-  },
-
-
-  headerTitle: {
-    fontSize: 21,
-
-    fontWeight: '700',
-
-    color: '#111827',
-  },
-
-
-  headerSubtitle: {
-    marginTop: 3,
-
-    fontSize: 12,
-
-    color: '#64748B',
-  },
-
-
-  // ===================================================
-  // LIST
-  // ===================================================
-
-  listContent: {
-    padding: 16,
-
-    paddingTop: 16,
-
-    paddingBottom: 20,
-  },
-
-
-  // ===================================================
-  // PRODUCT CARD
-  // ===================================================
-
-  productCard: {
     backgroundColor: '#FFFFFF',
 
-    borderRadius: 18,
-
-    padding: 12,
-
-    marginBottom: 12,
-
-    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
 
     borderWidth: 1,
-
-    borderColor: '#EEF2F7',
+    borderColor: '#E8EDFF',
 
     elevation: 2,
 
     shadowColor: '#000',
-
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     shadowOffset: {
       width: 0,
       height: 2,
     },
-
-    shadowOpacity: 0.05,
-
-    shadowRadius: 5,
   },
 
+  headerCenter: {
+    flex: 1,
+    marginLeft: 12,
+  },
 
-  productImage: {
-    width: 105,
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#111827',
+  },
 
-    height: 115,
+  headerSubtitle: {
+    marginTop: 3,
+    fontSize: 10,
+    color: '#64748B',
+  },
+
+  headerRight: {
+    width: 42,
+    height: 42,
 
     borderRadius: 14,
+
+    backgroundColor: '#EAF1FF',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    position: 'relative',
+
+    borderWidth: 1,
+    borderColor: '#D9E6FF',
+  },
+
+  cartBadge: {
+    position: 'absolute',
+
+    top: -4,
+    right: -4,
+
+    minWidth: 19,
+    height: 19,
+
+    paddingHorizontal: 4,
+
+    borderRadius: 10,
+
+    backgroundColor: '#EF4444',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    borderWidth: 2,
+    borderColor: '#F7F9FF',
+  },
+
+  cartBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+
+  // =======================================================
+  // CONTENT
+  // =======================================================
+
+  content: {
+    flex: 1,
+    minHeight: 0,
+  },
+
+  productList: {
+    flex: 1,
+  },
+
+  // =======================================================
+  // LIST
+  // =======================================================
+
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
+
+  // =======================================================
+  // CART CARD
+  // =======================================================
+
+  cartCard: {
+    flexDirection: 'row',
+
+    backgroundColor: '#FFFFFF',
+
+    borderRadius: 16,
+
+    padding: 10,
+
+    marginBottom: 12,
+
+    borderWidth: 1,
+    borderColor: '#E8EDFF',
+
+    elevation: 2,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+  },
+
+  imageContainer: {
+    width: 92,
+    height: 105,
+
+    borderRadius: 13,
+
+    overflow: 'hidden',
 
     backgroundColor: '#F1F5F9',
   },
 
-
-  productInfo: {
-    flex: 1,
-
-    marginLeft: 13,
+  productImage: {
+    width: '100%',
+    height: '100%',
   },
 
+  productDetails: {
+    flex: 1,
+
+    marginLeft: 12,
+
+    justifyContent: 'space-between',
+  },
 
   productTopRow: {
     flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
     alignItems: 'flex-start',
   },
-
 
   productName: {
     flex: 1,
@@ -576,34 +1040,30 @@ const styles = StyleSheet.create({
 
     color: '#111827',
 
-    marginRight: 8,
+    lineHeight: 19,
+
+    paddingRight: 5,
   },
 
+  deleteButton: {
+    width: 34,
+    height: 34,
 
-  deleteIcon: {
-    fontSize: 17,
+    borderRadius: 17,
+
+    backgroundColor: '#FEF2F2',
+
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
+  productMeta: {
+    fontSize: 11.5,
 
-  productDetails: {
-    marginTop: 6,
+    color: '#6B7280',
 
-    fontSize: 12,
-
-    color: '#64748B',
+    marginTop: 3,
   },
-
-
-  price: {
-    marginTop: 8,
-
-    fontSize: 16,
-
-    fontWeight: '700',
-
-    color: '#2563EB',
-  },
-
 
   bottomRow: {
     flexDirection: 'row',
@@ -612,49 +1072,50 @@ const styles = StyleSheet.create({
 
     justifyContent: 'space-between',
 
-    marginTop: 10,
+    marginTop: 8,
   },
 
+  priceText: {
+    fontSize: 16,
+
+    fontWeight: '800',
+
+    color: '#111827',
+  },
+
+  // =======================================================
+  // QUANTITY
+  // =======================================================
 
   quantityContainer: {
-    height: 34,
-
     flexDirection: 'row',
 
     alignItems: 'center',
 
-    backgroundColor: '#F8FAFC',
+    height: 34,
 
-    borderRadius: 10,
+    borderRadius: 9,
 
     borderWidth: 1,
+    borderColor: '#E5E7EB',
 
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+
+    overflow: 'hidden',
   },
-
 
   quantityButton: {
     width: 32,
-
     height: 32,
 
+    alignItems: 'center',
     justifyContent: 'center',
 
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
 
-
-  quantityButtonText: {
-    fontSize: 19,
-
-    fontWeight: '600',
-
-    color: '#2563EB',
-  },
-
-
-  quantity: {
-    minWidth: 25,
+  quantityText: {
+    minWidth: 30,
 
     textAlign: 'center',
 
@@ -665,133 +1126,123 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
 
+  // =======================================================
+  // SUMMARY
+  // =======================================================
 
-  itemTotal: {
-    fontSize: 14,
-
-    fontWeight: '700',
-
-    color: '#111827',
-  },
-
-
-  // ===================================================
-  // BOTTOM SUMMARY
-  // ===================================================
-
-  bottomContainer: {
+  summaryContainer: {
     backgroundColor: '#FFFFFF',
 
     paddingHorizontal: 18,
 
-    paddingTop: 14,
-
+    paddingTop: 12,
     paddingBottom: 14,
 
-    borderTopLeftRadius: 24,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
 
-    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderColor: '#E5E7EB',
 
-    elevation: 12,
+    elevation: 10,
 
     shadowColor: '#000',
-
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     shadowOffset: {
       width: 0,
       height: -3,
     },
-
-    shadowOpacity: 0.08,
-
-    shadowRadius: 8,
   },
 
+  summaryHeader: {
+    marginBottom: 8,
+  },
 
-  summaryRow: {
+  summaryTitleRow: {
     flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
-    marginBottom: 7,
-  },
-
-
-  summaryLabel: {
-    fontSize: 13,
-
-    color: '#64748B',
-  },
-
-
-  summaryValue: {
-    fontSize: 13,
-
-    fontWeight: '600',
-
-    color: '#334155',
-  },
-
-
-  deliveryValue: {
-    fontSize: 13,
-
-    fontWeight: '700',
-
-    color: '#16A34A',
-  },
-
-
-  discountValue: {
-    fontSize: 13,
-
-    fontWeight: '700',
-
-    color: '#16A34A',
-  },
-
-
-  divider: {
-    height: 1,
-
-    backgroundColor: '#E2E8F0',
-
-    marginVertical: 8,
-  },
-
-
-  totalRow: {
-    flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
     alignItems: 'center',
-
-    marginBottom: 12,
   },
 
+  summaryTitle: {
+    marginLeft: 8,
 
-  totalLabel: {
     fontSize: 16,
-
-    fontWeight: '700',
-
-    color: '#111827',
-  },
-
-
-  totalValue: {
-    fontSize: 20,
 
     fontWeight: '800',
 
     color: '#111827',
   },
 
+  summaryRow: {
+    flexDirection: 'row',
+
+    justifyContent: 'space-between',
+
+    alignItems: 'center',
+
+    marginVertical: 3,
+  },
+
+  summaryLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+
+  summaryValue: {
+    fontSize: 13,
+
+    fontWeight: '600',
+
+    color: '#111827',
+  },
+
+  freeText: {
+    color: '#16A34A',
+    fontWeight: '800',
+  },
+
+  discountText: {
+    fontSize: 13,
+
+    fontWeight: '700',
+
+    color: '#16A34A',
+  },
+
+  summaryDivider: {
+    height: 1,
+
+    backgroundColor: '#E5E7EB',
+
+    marginVertical: 7,
+  },
+
+  totalRow: {
+    marginTop: 2,
+    marginBottom: 10,
+  },
+
+  totalLabel: {
+    fontSize: 16,
+
+    fontWeight: '800',
+
+    color: '#111827',
+  },
+
+  totalValue: {
+    fontSize: 19,
+
+    fontWeight: '900',
+
+    color: '#2563EB',
+  },
 
   checkoutButton: {
-    height: 52,
+    height: 50,
 
-    borderRadius: 15,
+    borderRadius: 14,
 
     backgroundColor: '#2563EB',
 
@@ -802,62 +1253,262 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
     elevation: 4,
+
+    shadowColor: '#2563EB',
+
+    shadowOpacity: 0.25,
+
+    shadowRadius: 7,
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
   },
 
-
-  checkoutText: {
+  checkoutButtonText: {
     fontSize: 15,
 
-    fontWeight: '700',
+    fontWeight: '800',
 
     color: '#FFFFFF',
+
+    marginRight: 7,
   },
 
-
-  checkoutArrow: {
-    marginLeft: 10,
-
-    fontSize: 21,
-
-    color: '#FFFFFF',
-  },
-
-
-  // ===================================================
-  // EMPTY
-  // ===================================================
+  // =======================================================
+  // EMPTY CART
+  // =======================================================
 
   emptyContainer: {
+    flex: 1,
+
     alignItems: 'center',
 
     justifyContent: 'center',
 
-    paddingTop: 100,
+    paddingHorizontal: 35,
   },
-
 
   emptyIcon: {
-    fontSize: 55,
+    width: 105,
+    height: 105,
+
+    borderRadius: 53,
+
+    backgroundColor: '#EFF6FF',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginBottom: 20,
   },
 
-
   emptyTitle: {
-    marginTop: 16,
+    fontSize: 22,
 
-    fontSize: 19,
+    fontWeight: '800',
+
+    color: '#111827',
+
+    marginBottom: 8,
+  },
+
+  emptyMessage: {
+    fontSize: 14,
+
+    lineHeight: 21,
+
+    color: '#6B7280',
+
+    textAlign: 'center',
+
+    marginBottom: 24,
+  },
+
+  shopButton: {
+    height: 50,
+
+    paddingHorizontal: 24,
+
+    borderRadius: 13,
+
+    backgroundColor: '#2563EB',
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+  },
+
+  shopButtonText: {
+    color: '#FFFFFF',
+
+    fontSize: 15,
+
+    fontWeight: '800',
+
+    marginRight: 5,
+  },
+
+  // =======================================================
+  // SWEET ALERT
+  // =======================================================
+
+  alertOverlay: {
+    flex: 1,
+
+    backgroundColor:
+      'rgba(15, 23, 42, 0.55)',
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+
+    paddingHorizontal: 24,
+  },
+
+  alertBox: {
+    width: '100%',
+
+    maxWidth: 390,
+
+    backgroundColor: '#FFFFFF',
+
+    borderRadius: 24,
+
+    paddingHorizontal: 22,
+
+    paddingTop: 25,
+
+    paddingBottom: 20,
+
+    alignItems: 'center',
+
+    shadowColor: '#000',
+
+    shadowOpacity: 0.2,
+
+    shadowRadius: 18,
+
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+
+    elevation: 15,
+  },
+
+  alertIconCircle: {
+    width: 76,
+    height: 76,
+
+    borderRadius: 38,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginBottom: 15,
+  },
+
+  successIconCircle: {
+    backgroundColor: '#DCFCE7',
+  },
+
+  warningIconCircle: {
+    backgroundColor: '#FEF3C7',
+  },
+
+  errorIconCircle: {
+    backgroundColor: '#FEE2E2',
+  },
+
+  alertTitle: {
+    fontSize: 21,
+
+    fontWeight: '800',
+
+    color: '#111827',
+
+    textAlign: 'center',
+
+    marginBottom: 8,
+  },
+
+  alertMessage: {
+    fontSize: 14,
+
+    lineHeight: 21,
+
+    color: '#6B7280',
+
+    textAlign: 'center',
+
+    marginBottom: 22,
+
+    paddingHorizontal: 8,
+  },
+
+  alertButtonsContainer: {
+    width: '100%',
+
+    flexDirection: 'row',
+
+    justifyContent: 'space-between',
+
+    alignItems: 'center',
+  },
+
+  singleButtonContainer: {
+    justifyContent: 'center',
+  },
+
+  cancelAlertButton: {
+    width: '48%',
+
+    height: 48,
+
+    borderRadius: 12,
+
+    backgroundColor: '#F1F5F9',
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
+
+    borderWidth: 1,
+
+    borderColor: '#E2E8F0',
+  },
+
+  cancelAlertText: {
+    fontSize: 14,
 
     fontWeight: '700',
 
-    color: '#111827',
+    color: '#475569',
   },
 
+  confirmAlertButton: {
+    width: '48%',
 
-  emptyText: {
-    marginTop: 6,
+    height: 48,
 
-    fontSize: 13,
+    borderRadius: 12,
 
-    color: '#64748B',
+    backgroundColor: '#2563EB',
+
+    alignItems: 'center',
+
+    justifyContent: 'center',
   },
 
+  confirmAlertText: {
+    fontSize: 14,
+
+    fontWeight: '800',
+
+    color: '#FFFFFF',
+  },
 });
