@@ -3,54 +3,66 @@ import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  StatusBar,
   TextInput,
   TouchableOpacity,
   ScrollView,
   Image,
   Animated,
   Easing,
-  Dimensions,
 } from 'react-native';
 
 import {
   Search,
   Heart,
-  Bell,
   ChevronRight,
   Star,
   Plus,
   Sparkles,
   Tag,
-  LogOut,
   Package,
 } from 'lucide-react-native';
 
 import Slick from 'react-native-slick';
-
 import SweetAlert from 'react-native-sweet-alert';
 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import styles from '../styles/HomeScreen';
 
-const {width} = Dimensions.get('window');
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: string;
+  oldPrice: string;
+  rating: string;
+  image: string;
+}
 
+interface HomeScreenProps {
+  onLogout?: () => void;
+  onProfilePress?: () => void;
+  onCartPress?: () => void;
+  onProductPress?: (product: Product) => void;
+  onHomePress?: () => void;
+  onProductsPress?: () => void;
+  onFavoritesPress?: () => void;
+}
 
-const HomeScreen = ({
+const HomeScreen: React.FC<HomeScreenProps> = ({
   onLogout,
   onProfilePress,
   onCartPress,
   onProductPress,
+  onHomePress,
+  onProductsPress,
+  onFavoritesPress,
 }) => {
-
   const [search, setSearch] = useState('');
-
   const [selectedCategory, setSelectedCategory] =
     useState('All');
 
   const [cartCount, setCartCount] = useState(0);
-
 
   /* ================= ANIMATION ================= */
 
@@ -59,138 +71,102 @@ const HomeScreen = ({
   ).current;
 
   const slideAnim = useRef(
-    new Animated.Value(30),
+    new Animated.Value(25),
   ).current;
 
   const floatingAnim = useRef(
     new Animated.Value(0),
   ).current;
 
-
   useEffect(() => {
-
     Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
 
-      Animated.timing(
-        fadeAnim,
-        {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        },
-      ),
-
-      Animated.spring(
-        slideAnim,
-        {
-          toValue: 0,
-          friction: 7,
-          tension: 45,
-          useNativeDriver: true,
-        },
-      ),
-
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 7,
+        tension: 45,
+        useNativeDriver: true,
+      }),
     ]).start();
 
-
-    Animated.loop(
-
+    const floatingLoop = Animated.loop(
       Animated.sequence([
+        Animated.timing(floatingAnim, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
 
-        Animated.timing(
-          floatingAnim,
-          {
-            toValue: 1,
-            duration: 1800,
-            easing: Easing.inOut(
-              Easing.ease,
-            ),
-            useNativeDriver: true,
-          },
-        ),
-
-        Animated.timing(
-          floatingAnim,
-          {
-            toValue: 0,
-            duration: 1800,
-            easing: Easing.inOut(
-              Easing.ease,
-            ),
-            useNativeDriver: true,
-          },
-        ),
-
+        Animated.timing(floatingAnim, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
       ]),
+    );
 
-    ).start();
+    floatingLoop.start();
 
-  }, [
-    fadeAnim,
-    slideAnim,
-    floatingAnim,
-  ]);
-
+    return () => {
+      floatingLoop.stop();
+    };
+  }, [fadeAnim, slideAnim, floatingAnim]);
 
   /* ================= CATEGORIES ================= */
 
   const categories = [
-
     {
       id: '1',
       name: 'All',
       icon: '✨',
     },
-
     {
       id: '2',
       name: 'Fashion',
       icon: '👕',
     },
-
     {
       id: '3',
       name: 'Shoes',
       icon: '👟',
     },
-
     {
       id: '4',
       name: 'Beauty',
       icon: '💄',
     },
-
     {
       id: '5',
       name: 'Electronics',
       icon: '🎧',
     },
-
     {
       id: '6',
       name: 'Home',
       icon: '🏠',
     },
-
     {
       id: '7',
       name: 'Watches',
       icon: '⌚',
     },
-
     {
       id: '8',
       name: 'Bags',
       icon: '👜',
     },
-
   ];
-
 
   /* ================= PRODUCTS ================= */
 
-  const products = [
-
+  const products: Product[] = [
     {
       id: '1',
       name: 'Premium Sneakers',
@@ -300,14 +276,11 @@ const HomeScreen = ({
       image:
         'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600',
     },
-
   ];
-
 
   /* ================= BANNERS ================= */
 
   const banners = [
-
     {
       id: '1',
       title: 'Up to 50% OFF',
@@ -334,41 +307,26 @@ const HomeScreen = ({
       image:
         'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=1000',
     },
-
   ];
-
 
   /* ================= FILTER ================= */
 
-  const filteredProducts =
-    products.filter(product => {
+  const filteredProducts = products.filter(product => {
+    const categoryMatch =
+      selectedCategory === 'All' ||
+      product.category === selectedCategory;
 
-      const categoryMatch =
-        selectedCategory === 'All' ||
-        product.category === selectedCategory;
+    const searchMatch = product.name
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
 
-      const searchMatch =
-        product.name
-          .toLowerCase()
-          .includes(
-            search.toLowerCase(),
-          );
-
-      return (
-        categoryMatch &&
-        searchMatch
-      );
-
-    });
-
+    return categoryMatch && searchMatch;
+  });
 
   /* ================= ADD CART ================= */
 
-  const handleAddToCart = product => {
-
-    setCartCount(
-      previous => previous + 1,
-    );
+  const handleAddToCart = (product: Product) => {
+    setCartCount(previous => previous + 1);
 
     SweetAlert.showAlert(
       'Added to Cart',
@@ -382,30 +340,23 @@ const HomeScreen = ({
         type: 'success',
       },
     );
-
   };
-
 
   /* ================= PRODUCT ================= */
 
-  const handleProductPress = product => {
-
+  const handleProductPress = (product: Product) => {
     if (onProductPress) {
-
       onProductPress(product);
-
       return;
-
     }
 
     SweetAlert.showAlert(
       product.name,
-      `${product.price}  •  ⭐ ${product.rating}`,
+      `${product.price} • ⭐ ${product.rating}`,
       [
         {
           text: 'Add to Cart',
-          onPress: () =>
-            handleAddToCart(product),
+          onPress: () => handleAddToCart(product),
         },
 
         {
@@ -416,81 +367,38 @@ const HomeScreen = ({
         type: 'info',
       },
     );
-
   };
 
+  /* ================= NOTIFICATION ================= */
 
-  /* ================= LOGOUT ================= */
-
-  const handleLogout = () => {
-
+  const handleNotification = () => {
     SweetAlert.showAlert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Notifications',
+      'You have 3 new notifications.',
       [
-
         {
-          text: 'Cancel',
+          text: 'OK',
         },
-
-        {
-          text: 'Logout',
-
-          onPress: () => {
-
-            if (onLogout) {
-              onLogout();
-            }
-
-          },
-        },
-
       ],
       {
-        type: 'warning',
+        type: 'info',
       },
     );
-
   };
 
-
   return (
-
     <View style={styles.container}>
 
-      {/* ================================================= */}
-      {/* ================= FIXED HEADER ================== */}
-      {/* ================================================= */}
+      {/* ================= FIXED HEADER ================= */}
 
       <Header
         userName="John William"
-
         cartCount={cartCount}
-
-        onNotificationPress={() => {
-
-          SweetAlert.showAlert(
-            'Notifications',
-            'You have 3 new notifications.',
-            [
-              {
-                text: 'OK',
-              },
-            ],
-            {
-              type: 'info',
-            },
-          );
-
-        }}
-
+        onNotificationPress={handleNotification}
         onProfilePress={onProfilePress}
       />
 
-
-      {/* ================================================= */}
-      {/* =============== ONLY THIS SCROLLS =============== */}
-      {/* ================================================= */}
+      {/* ================= SCROLLABLE CONTENT ================= */}
 
       <Animated.View
         style={[
@@ -503,16 +411,12 @@ const HomeScreen = ({
               },
             ],
           },
-        ]}
-      >
+        ]}>
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={
-            styles.scrollContent
-          }
           keyboardShouldPersistTaps="handled"
-        >
+          contentContainerStyle={styles.scrollContent}>
 
           {/* ================= SEARCH ================= */}
 
@@ -532,18 +436,15 @@ const HomeScreen = ({
             />
 
             <View style={styles.searchIcon}>
-
               <Sparkles
                 size={17}
                 color="#2563EB"
               />
-
             </View>
 
           </View>
 
-
-          {/* ================= SLIDER ================= */}
+          {/* ================= BANNER ================= */}
 
           <View style={styles.sliderContainer}>
 
@@ -556,1006 +457,341 @@ const HomeScreen = ({
               showsButtons={false}
               paginationStyle={styles.pagination}
               dotStyle={styles.dot}
-              activeDotStyle={
-                styles.activeDot
-              }
-            >
+              activeDotStyle={styles.activeDot}>
 
-              {banners.map(
-                banner => (
+              {banners.map(banner => (
+                <View
+                  key={banner.id}
+                  style={styles.slide}>
 
-                  <View
-                    key={banner.id}
-                    style={styles.slide}
-                  >
+                  <Image
+                    source={{
+                      uri: banner.image,
+                    }}
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                  />
 
-                    <Image
-                      source={{
-                        uri:
-                          banner.image,
-                      }}
-                      style={
-                        styles.bannerImage
-                      }
-                    />
+                  <View style={styles.bannerOverlay} />
 
-                    <View
-                      style={
-                        styles.bannerOverlay
-                      }
-                    />
+                  <View style={styles.bannerContent}>
 
-                    <View
-                      style={
-                        styles.bannerContent
-                      }
-                    >
+                    <View style={styles.saleBadge}>
 
-                      <View
-                        style={
-                          styles.saleBadge
-                        }
-                      >
+                      <Tag
+                        size={12}
+                        color="#FFFFFF"
+                      />
 
-                        <Tag
-                          size={12}
-                          color="#FFFFFF"
-                        />
-
-                        <Text
-                          style={
-                            styles.saleText
-                          }
-                        >
-                          {banner.badge}
-                        </Text>
-
-                      </View>
-
-                      <Text
-                        style={
-                          styles.bannerTitle
-                        }
-                      >
-                        {banner.title}
+                      <Text style={styles.saleText}>
+                        {banner.badge}
                       </Text>
-
-                      <Text
-                        style={
-                          styles.bannerSubtitle
-                        }
-                      >
-                        {banner.subtitle}
-                      </Text>
-
-                      <TouchableOpacity
-                        style={
-                          styles.shopButton
-                        }
-                      >
-
-                        <Text
-                          style={
-                            styles.shopButtonText
-                          }
-                        >
-                          Shop Now
-                        </Text>
-
-                        <ChevronRight
-                          size={16}
-                          color="#2563EB"
-                        />
-
-                      </TouchableOpacity>
 
                     </View>
 
+                    <Text style={styles.bannerTitle}>
+                      {banner.title}
+                    </Text>
+
+                    <Text style={styles.bannerSubtitle}>
+                      {banner.subtitle}
+                    </Text>
+
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.shopButton}>
+
+                      <Text style={styles.shopButtonText}>
+                        Shop Now
+                      </Text>
+
+                      <ChevronRight
+                        size={16}
+                        color="#2563EB"
+                      />
+
+                    </TouchableOpacity>
+
                   </View>
-
-                ),
-              )}
-
+                </View>
+              ))}
             </Slick>
 
           </View>
 
-
           {/* ================= CATEGORY TITLE ================= */}
 
-          <View
-            style={
-              styles.sectionHeader
-            }
-          >
+          <View style={styles.sectionHeader}>
 
-            <Text
-              style={
-                styles.sectionTitle
-              }
-            >
+            <Text style={styles.sectionTitle}>
               Categories
             </Text>
 
-            <Text
-              style={styles.seeAll}
-            >
-              See All
-            </Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>
+                See All
+              </Text>
+            </TouchableOpacity>
 
           </View>
-
 
           {/* ================= CATEGORIES ================= */}
 
           <ScrollView
             horizontal
-            showsHorizontalScrollIndicator={
-              false
-            }
+            showsHorizontalScrollIndicator={false}
             contentContainerStyle={
               styles.categoryScroll
-            }
-          >
+            }>
 
-            {categories.map(
-              category => {
+            {categories.map(category => {
 
-                const active =
-                  selectedCategory ===
-                  category.name;
+              const active =
+                selectedCategory === category.name;
 
-                return (
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  style={styles.categoryItem}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    setSelectedCategory(
+                      category.name,
+                    )
+                  }>
+
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      active &&
+                        styles.categoryIconActive,
+                    ]}>
+
+                    <Text style={styles.categoryEmoji}>
+                      {category.icon}
+                    </Text>
+
+                  </View>
+
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      active &&
+                        styles.categoryTextActive,
+                    ]}>
+
+                    {category.name}
+
+                  </Text>
+
+                </TouchableOpacity>
+              );
+            })}
+
+          </ScrollView>
+
+          {/* ================= PRODUCT TITLE ================= */}
+
+          <View style={styles.sectionHeader}>
+
+            <View>
+              <Text style={styles.sectionTitle}>
+                Popular Products
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                {filteredProducts.length} products available
+              </Text>
+            </View>
+
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>
+                View All
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+
+          {/* ================= PRODUCT GRID ================= */}
+
+          <View style={styles.productGrid}>
+
+            {filteredProducts.map(product => (
+
+              <TouchableOpacity
+                key={product.id}
+                activeOpacity={0.92}
+                style={styles.productCard}
+                onPress={() =>
+                  handleProductPress(product)
+                }>
+
+                {/* PRODUCT IMAGE */}
+
+                <View
+                  style={
+                    styles.productImageContainer
+                  }>
+
+                  <Image
+                    source={{
+                      uri: product.image,
+                    }}
+                    style={styles.productImage}
+                    resizeMode="cover"
+                  />
+
+                  {/* FAVORITE */}
 
                   <TouchableOpacity
-                    key={
-                      category.id
-                    }
-                    style={
-                      styles.categoryItem
-                    }
-                    onPress={() =>
-                      setSelectedCategory(
-                        category.name,
-                      )
-                    }
-                    activeOpacity={
-                      0.8
-                    }
-                  >
+                    activeOpacity={0.8}
+                    style={styles.favoriteButton}>
 
-                    <View
-                      style={[
-                        styles.categoryIcon,
+                    <Heart
+                      size={17}
+                      color="#334155"
+                    />
 
-                        active &&
-                          styles.categoryIconActive,
-                      ]}
-                    >
+                  </TouchableOpacity>
 
-                      <Text
-                        style={
-                          styles.categoryEmoji
-                        }
-                      >
-                        {
-                          category.icon
-                        }
+                  {/* SALE */}
+
+                  <View style={styles.discountBadge}>
+
+                    <Text style={styles.discountText}>
+                      SALE
+                    </Text>
+
+                  </View>
+
+                </View>
+
+                {/* PRODUCT INFO */}
+
+                <View style={styles.productInfo}>
+
+                  <Text style={styles.productCategory}>
+                    {product.category}
+                  </Text>
+
+                  <Text
+                    numberOfLines={1}
+                    style={styles.productName}>
+
+                    {product.name}
+
+                  </Text>
+
+                  {/* RATING */}
+
+                  <View style={styles.ratingRow}>
+
+                    <Star
+                      size={13}
+                      color="#F59E0B"
+                      fill="#F59E0B"
+                    />
+
+                    <Text style={styles.ratingText}>
+                      {product.rating}
+                    </Text>
+
+                    <Text style={styles.ratingCount}>
+                      (120)
+                    </Text>
+
+                  </View>
+
+                  {/* PRICE */}
+
+                  <View style={styles.priceRow}>
+
+                    <View>
+
+                      <Text style={styles.price}>
+                        {product.price}
+                      </Text>
+
+                      <Text style={styles.oldPrice}>
+                        {product.oldPrice}
                       </Text>
 
                     </View>
 
-                    <Text
-                      style={[
-                        styles.categoryText,
-
-                        active &&
-                          styles.categoryTextActive,
-                      ]}
-                    >
-                      {
-                        category.name
-                      }
-                    </Text>
-
-                  </TouchableOpacity>
-
-                );
-
-              },
-            )}
-
-          </ScrollView>
-
-
-          {/* ================= PRODUCT TITLE ================= */}
-
-          <View
-            style={
-              styles.sectionHeader
-            }
-          >
-
-            <View>
-
-              <Text
-                style={
-                  styles.sectionTitle
-                }
-              >
-                Popular Products
-              </Text>
-
-              <Text
-                style={
-                  styles.sectionSubtitle
-                }
-              >
-                {
-                  filteredProducts.length
-                } products available
-              </Text>
-
-            </View>
-
-            <Text
-              style={styles.seeAll}
-            >
-              View All
-            </Text>
-
-          </View>
-
-
-          {/* ================= PRODUCT GRID ================= */}
-
-          <View
-            style={styles.productGrid}
-          >
-
-            {filteredProducts.map(
-              product => (
-
-                <TouchableOpacity
-                  key={product.id}
-                  style={
-                    styles.productCard
-                  }
-                  activeOpacity={
-                    0.9
-                  }
-                  onPress={() =>
-                    handleProductPress(
-                      product,
-                    )
-                  }
-                >
-
-                  <View
-                    style={
-                      styles.productImageContainer
-                    }
-                  >
-
-                    <Image
-                      source={{
-                        uri:
-                          product.image,
-                      }}
-                      style={
-                        styles.productImage
-                      }
-                    />
-
                     <TouchableOpacity
-                      style={
-                        styles.favoriteButton
-                      }
-                    >
+                      activeOpacity={0.8}
+                      style={styles.addButton}
+                      onPress={() =>
+                        handleAddToCart(product)
+                      }>
 
-                      <Heart
-                        size={17}
-                        color="#334155"
+                      <Plus
+                        size={19}
+                        color="#FFFFFF"
                       />
 
                     </TouchableOpacity>
 
-                    <View
-                      style={
-                        styles.discountBadge
-                      }
-                    >
-
-                      <Text
-                        style={
-                          styles.discountText
-                        }
-                      >
-                        SALE
-                      </Text>
-
-                    </View>
-
                   </View>
 
+                </View>
 
-                  <View
-                    style={
-                      styles.productInfo
-                    }
-                  >
-
-                    <Text
-                      style={
-                        styles.productCategory
-                      }
-                    >
-                      {
-                        product.category
-                      }
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.productName
-                      }
-                      numberOfLines={1}
-                    >
-                      {
-                        product.name
-                      }
-                    </Text>
-
-
-                    <View
-                      style={
-                        styles.ratingRow
-                      }
-                    >
-
-                      <Star
-                        size={13}
-                        color="#F59E0B"
-                        fill="#F59E0B"
-                      />
-
-                      <Text
-                        style={
-                          styles.ratingText
-                        }
-                      >
-                        {
-                          product.rating
-                        }
-                      </Text>
-
-                      <Text
-                        style={
-                          styles.ratingCount
-                        }
-                      >
-                        (120)
-                      </Text>
-
-                    </View>
-
-
-                    <View
-                      style={
-                        styles.priceRow
-                      }
-                    >
-
-                      <View>
-
-                        <Text
-                          style={
-                            styles.price
-                          }
-                        >
-                          {
-                            product.price
-                          }
-                        </Text>
-
-                        <Text
-                          style={
-                            styles.oldPrice
-                          }
-                        >
-                          {
-                            product.oldPrice
-                          }
-                        </Text>
-
-                      </View>
-
-
-                      <TouchableOpacity
-                        style={
-                          styles.addButton
-                        }
-                        onPress={() =>
-                          handleAddToCart(
-                            product,
-                          )
-                        }
-                      >
-
-                        <Plus
-                          size={19}
-                          color="#FFFFFF"
-                        />
-
-                      </TouchableOpacity>
-
-                    </View>
-
-                  </View>
-
-                </TouchableOpacity>
-
-              ),
-            )}
+              </TouchableOpacity>
+            ))}
 
           </View>
 
-
           {/* ================= EMPTY ================= */}
 
-          {filteredProducts.length ===
-            0 && (
+          {filteredProducts.length === 0 && (
 
-            <View
-              style={
-                styles.emptyContainer
-              }
-            >
+            <View style={styles.emptyContainer}>
 
               <Package
                 size={45}
                 color="#CBD5E1"
               />
 
-              <Text
-                style={
-                  styles.emptyTitle
-                }
-              >
+              <Text style={styles.emptyTitle}>
                 No products found
               </Text>
 
-              <Text
-                style={
-                  styles.emptyText
-                }
-              >
-                Try another search
-                or category.
+              <Text style={styles.emptyText}>
+                Try another search or category.
               </Text>
 
             </View>
 
           )}
 
-  
-       
-
         </ScrollView>
 
       </Animated.View>
 
+      {/* ================= FIXED FOOTER ================= */}
 
-
-      {/* ================= REUSABLE FOOTER ================= */}
       <Footer
         activeTab="home"
         cartCount={cartCount}
-        onHomePress={() => {}}
-        onProductsPress={() => {}}
-        onFavoritesPress={() => {}}
-        onCartPress={onCartPress}
-        onProfilePress={onProfilePress}
+        onHomePress={
+          onHomePress || (() => {})
+        }
+        onProductsPress={
+          onProductsPress || (() => {})
+        }
+        onFavoritesPress={
+          onFavoritesPress || (() => {})
+        }
+        onCartPress={
+          onCartPress || (() => {})
+        }
+        onProfilePress={
+          onProfilePress || (() => {})
+        }
       />
 
-
-
     </View>
-
   );
 };
 
 export default HomeScreen;
-
-
-/* ================================================= */
-/* ===================== STYLES ==================== */
-/* ================================================= */
-
-const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: '#F7F9FF',
-  },
-
-  contentWrapper: {
-    flex: 1,
-  },
-
-  scrollContent: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 100,
-  },
-
-
-  /* ================= SEARCH ================= */
-searchContainer: {
-  height: 56,
-  borderRadius: 18,
-  backgroundColor: '#FFFFFF',
-  flexDirection: 'row',
-  alignItems: 'center',
-  paddingHorizontal: 13,
-
-  borderWidth: 1,
-  borderColor: '#E5EAF5',
-
-  marginTop: -6,
-  marginBottom: 18,
-},
-
-  searchInput: {
-    flex: 1,
-
-    height: 55,
-
-    marginLeft: 9,
-
-    fontSize: 13,
-
-    color: '#111827',
-  },
-
-  searchIcon: {
-    width: 36,
-    height: 36,
-
-    borderRadius: 12,
-
-    backgroundColor: '#EAF1FF',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-
-  /* ================= SLIDER ================= */
-
-  sliderContainer: {
-    height: 205,
-
-    marginBottom: 25,
-
-    borderRadius: 25,
-
-    overflow: 'hidden',
-  },
-
-  slide: {
-    flex: 1,
-
-    borderRadius: 25,
-
-    overflow: 'hidden',
-  },
-
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-
-    position: 'absolute',
-  },
-
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-
-    backgroundColor:
-      'rgba(15, 23, 42, 0.48)',
-  },
-
-  bannerContent: {
-    flex: 1,
-
-    justifyContent: 'center',
-
-    paddingHorizontal: 22,
-  },
-
-  saleBadge: {
-    alignSelf: 'flex-start',
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    backgroundColor: '#2563EB',
-
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-
-    borderRadius: 20,
-  },
-
-  saleText: {
-    marginLeft: 5,
-
-    fontSize: 8,
-
-    color: '#FFFFFF',
-
-    fontWeight: '900',
-  },
-
-  bannerTitle: {
-    marginTop: 10,
-
-    color: '#FFFFFF',
-
-    fontSize: 27,
-
-    fontWeight: '900',
-  },
-
-  bannerSubtitle: {
-    marginTop: 3,
-
-    color: '#E2E8F0',
-
-    fontSize: 11,
-  },
-
-  shopButton: {
-    alignSelf: 'flex-start',
-
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    backgroundColor: '#FFFFFF',
-
-    borderRadius: 13,
-
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-
-    marginTop: 12,
-  },
-
-  shopButtonText: {
-    fontSize: 10,
-
-    color: '#2563EB',
-
-    fontWeight: '900',
-  },
-
-  pagination: {
-    bottom: 8,
-  },
-
-  dot: {
-    width: 6,
-    height: 6,
-
-    borderRadius: 3,
-
-    backgroundColor: '#CBD5E1',
-
-    marginHorizontal: 3,
-  },
-
-  activeDot: {
-    width: 18,
-    height: 6,
-
-    borderRadius: 3,
-
-    backgroundColor: '#FFFFFF',
-
-    marginHorizontal: 3,
-  },
-
-
-  /* ================= SECTION ================= */
-
-  sectionHeader: {
-    flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
-    alignItems: 'center',
-
-    marginBottom: 13,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-
-    fontWeight: '900',
-
-    color: '#111827',
-  },
-
-  sectionSubtitle: {
-    fontSize: 10,
-
-    color: '#94A3B8',
-
-    marginTop: 3,
-  },
-
-  seeAll: {
-    fontSize: 11,
-
-    color: '#2563EB',
-
-    fontWeight: '800',
-  },
-
-
-  /* ================= CATEGORY ================= */
-
-  categoryScroll: {
-    paddingBottom: 22,
-  },
-
-  categoryItem: {
-    alignItems: 'center',
-
-    marginRight: 16,
-  },
-
-  categoryIcon: {
-    width: 59,
-    height: 59,
-
-    borderRadius: 19,
-
-    backgroundColor: '#FFFFFF',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    borderWidth: 1,
-    borderColor: '#E8EDFF',
-  },
-
-  categoryIconActive: {
-    backgroundColor: '#2563EB',
-
-    borderColor: '#2563EB',
-  },
-
-  categoryEmoji: {
-    fontSize: 25,
-  },
-
-  categoryText: {
-    marginTop: 7,
-
-    fontSize: 10,
-
-    color: '#64748B',
-
-    fontWeight: '700',
-  },
-
-  categoryTextActive: {
-    color: '#2563EB',
-
-    fontWeight: '900',
-  },
-
-
-  /* ================= PRODUCT ================= */
-
-  productGrid: {
-    flexDirection: 'row',
-
-    flexWrap: 'wrap',
-
-    justifyContent: 'space-between',
-  },
-
-  productCard: {
-    width: (width - 46) / 2,
-
-    backgroundColor: '#FFFFFF',
-
-    borderRadius: 21,
-
-    overflow: 'hidden',
-
-    marginBottom: 15,
-
-    borderWidth: 1,
-
-    borderColor: '#EDF1F8',
-  },
-
-  productImageContainer: {
-    height: 155,
-
-    backgroundColor: '#F1F5F9',
-
-    position: 'relative',
-  },
-
-  productImage: {
-    width: '100%',
-    height: '100%',
-  },
-
-  favoriteButton: {
-    position: 'absolute',
-
-    top: 9,
-    right: 9,
-
-    width: 31,
-    height: 31,
-
-    borderRadius: 11,
-
-    backgroundColor:
-      'rgba(255,255,255,0.92)',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  discountBadge: {
-    position: 'absolute',
-
-    left: 9,
-    top: 9,
-
-    backgroundColor: '#EF4444',
-
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-
-    borderRadius: 7,
-  },
-
-  discountText: {
-    color: '#FFFFFF',
-
-    fontSize: 7,
-
-    fontWeight: '900',
-  },
-
-  productInfo: {
-    padding: 11,
-  },
-
-  productCategory: {
-    fontSize: 8,
-
-    color: '#94A3B8',
-
-    fontWeight: '700',
-
-    textTransform: 'uppercase',
-  },
-
-  productName: {
-    marginTop: 4,
-
-    fontSize: 12,
-
-    color: '#1E293B',
-
-    fontWeight: '800',
-  },
-
-  ratingRow: {
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    marginTop: 6,
-  },
-
-  ratingText: {
-    marginLeft: 4,
-
-    fontSize: 9,
-
-    color: '#334155',
-
-    fontWeight: '800',
-  },
-
-  ratingCount: {
-    marginLeft: 3,
-
-    fontSize: 8,
-
-    color: '#94A3B8',
-  },
-
-  priceRow: {
-    marginTop: 9,
-
-    flexDirection: 'row',
-
-    justifyContent: 'space-between',
-
-    alignItems: 'center',
-  },
-
-  price: {
-    fontSize: 15,
-
-    color: '#111827',
-
-    fontWeight: '900',
-  },
-
-  oldPrice: {
-    fontSize: 8,
-
-    color: '#94A3B8',
-
-    textDecorationLine:
-      'line-through',
-
-    marginTop: 2,
-  },
-
-  addButton: {
-    width: 34,
-    height: 34,
-
-    borderRadius: 12,
-
-    backgroundColor: '#2563EB',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-
-  /* ================= EMPTY ================= */
-
-  emptyContainer: {
-    alignItems: 'center',
-
-    paddingVertical: 50,
-  },
-
-  emptyTitle: {
-    marginTop: 10,
-
-    fontSize: 15,
-
-    color: '#475569',
-
-    fontWeight: '800',
-  },
-
-  emptyText: {
-    marginTop: 4,
-
-    fontSize: 11,
-
-    color: '#94A3B8',
-  },
-
-
-
-});

@@ -802,22 +802,17 @@ const CartScreen = ({navigation}: Props) => {
 
             {/* CHECKOUT */}
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleCheckout}
-              style={styles.checkoutButton}>
-              <Text
-                style={
-                  styles.checkoutButtonText
-                }>
-                Proceed to Checkout
-              </Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('Checkout')}
+                  style={styles.checkoutButton}
+                >
+                  <Text style={styles.checkoutButtonText}>
+                    Proceed to Checkout
+                  </Text>
 
-              <ChevronRight
-                size={21}
-                color="#FFFFFF"
-              />
-            </TouchableOpacity>
+                  <ChevronRight size={21} color="#FFFFFF" />
+                </TouchableOpacity>
           </View>
         </View>
       )}

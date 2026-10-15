@@ -14,7 +14,10 @@ import OtpVerificationScreen from '../screens/OtpVerificationScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CartScreen from '../screens/CartScreen';
-
+import FavoritesScreen from '../screens/FavoritesScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
+import OrderSuccessScreen from '../screens/OrderSuccessScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 
 // ========================================
 // NAVIGATION TYPES
@@ -34,6 +37,10 @@ export type RootStackParamList = {
   Profile: undefined;
 
   Cart: undefined;
+  Favorites: undefined;
+  Checkout: undefined;
+  OrderSuccess: undefined;
+  OrderTracking: undefined;
 };
 
 
@@ -100,6 +107,15 @@ const AppNavigator = () => {
           component={HomeScreen}
         />
 
+        {/* =========================
+            FAVORITES
+        ========================= */}
+
+        <Stack.Screen
+          name="Favorites"
+          component={FavoritesScreen}
+        />
+
 
         {/* =========================
             PROFILE
@@ -118,6 +134,34 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Cart"
           component={CartScreen}
+        />
+
+        {/* =========================
+            CHECKOUT
+        ========================= */}
+
+        <Stack.Screen
+          name="Checkout"
+          component={CheckoutScreen}
+        />
+
+        {/* =========================
+            ORDER SUCCESS
+        ========================= */}
+
+        <Stack.Screen
+          name="OrderSuccess"
+          component={OrderSuccessScreen}
+           options={{headerShown: false}}
+        />
+        {/* =========================
+            Order  Tracking Screen
+        ========================= */}
+
+        <Stack.Screen
+          name="OrderTracking"
+          component={OrderTrackingScreen}
+           options={{headerShown: false}}
         />
 
       </Stack.Navigator>

@@ -15,9 +15,7 @@ import {
   User,
 } from 'lucide-react-native';
 
-import {
-  useNavigation,
-} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 import type {
   NativeStackNavigationProp,
@@ -31,7 +29,13 @@ type NavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
 
 interface FooterProps {
-  activeTab?: 'home' | 'products' | 'favorites' | 'cart' | 'profile';
+  activeTab?:
+    | 'home'
+    | 'products'
+    | 'favorites'
+    | 'cart'
+    | 'profile';
+
   cartCount?: number;
 }
 
@@ -39,15 +43,23 @@ const Footer = ({
   activeTab = 'home',
   cartCount = 0,
 }: FooterProps) => {
+  const navigation =
+    useNavigation<NavigationProp>();
 
-  const navigation = useNavigation<NavigationProp>();
-
-  // ==============================
-  // NAVIGATION FUNCTIONS
-  // ==============================
+  // ==========================================
+  // NAVIGATION
+  // ==========================================
 
   const goHome = () => {
     navigation.navigate('Home');
+  };
+
+  const goProducts = () => {
+    navigation.navigate('Products');
+  };
+
+  const goFavorites = () => {
+    navigation.navigate('Favorites');
   };
 
   const goCart = () => {
@@ -58,13 +70,16 @@ const Footer = ({
     navigation.navigate('Profile');
   };
 
+  // ==========================================
+  // COMMON FOOTER ITEM
+  // ==========================================
+
   const renderItem = (
     tab: FooterProps['activeTab'],
     icon: React.ReactNode,
     label: string,
     onPress: () => void,
   ) => {
-
     const isActive = activeTab === tab;
 
     return (
@@ -73,11 +88,11 @@ const Footer = ({
         activeOpacity={0.75}
         onPress={onPress}
       >
-
         <View
           style={[
             styles.iconContainer,
-            isActive && styles.activeIconContainer,
+            isActive &&
+              styles.activeIconContainer,
           ]}
         >
           {icon}
@@ -86,15 +101,19 @@ const Footer = ({
         <Text
           style={[
             styles.footerText,
-            isActive && styles.footerTextActive,
+            isActive &&
+              styles.footerTextActive,
           ]}
         >
           {label}
         </Text>
-
       </TouchableOpacity>
     );
   };
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <View style={styles.footer}>
@@ -128,7 +147,7 @@ const Footer = ({
         goHome,
       )}
 
-      {/* ================= PRODUCTS ================= */}
+      {/* ================ PRODUCTS ================ */}
 
       {renderItem(
         'products',
@@ -149,13 +168,10 @@ const Footer = ({
 
         'Products',
 
-        () => {
-          // Products screen add hone ke baad:
-          // navigation.navigate('Products');
-        },
+        goProducts,
       )}
 
-      {/* ================= FAVORITES ================= */}
+      {/* ================ FAVORITES ================ */}
 
       {renderItem(
         'favorites',
@@ -181,10 +197,7 @@ const Footer = ({
 
         'Favorites',
 
-        () => {
-          // Favorites screen add hone ke baad:
-          // navigation.navigate('Favorites');
-        },
+        goFavorites,
       )}
 
       {/* ================= CART ================= */}
@@ -194,7 +207,6 @@ const Footer = ({
         activeOpacity={0.8}
         onPress={goCart}
       >
-
         <View style={styles.cartIconWrapper}>
 
           <View
@@ -204,7 +216,6 @@ const Footer = ({
                 styles.activeIconContainer,
             ]}
           >
-
             <ShoppingCart
               size={21}
               color={
@@ -218,39 +229,32 @@ const Footer = ({
                   : 1.8
               }
             />
-
           </View>
 
           {/* CART BADGE */}
 
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
-
-              <Text style={styles.cartBadgeText}>
+              <Text
+                style={styles.cartBadgeText}
+              >
                 {cartCount > 99
                   ? '99+'
                   : cartCount}
               </Text>
-
             </View>
           )}
-
         </View>
 
         <Text
           style={[
             styles.footerText,
-            {
-              color:
-                activeTab === 'cart'
-                  ? '#EF4444'
-                  : '#94A3B8',
-            },
+            activeTab === 'cart' &&
+              styles.cartTextActive,
           ]}
         >
           Cart
         </Text>
-
       </TouchableOpacity>
 
       {/* ================= PROFILE ================= */}
@@ -276,20 +280,17 @@ const Footer = ({
 
         goProfile,
       )}
-
     </View>
   );
 };
 
 export default Footer;
 
-
-/* ================================================= */
-/* ===================== STYLES ==================== */
-/* ================================================= */
+// =================================================
+// STYLES
+// =================================================
 
 const styles = StyleSheet.create({
-
   footer: {
     position: 'absolute',
 
@@ -373,6 +374,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
+  cartTextActive: {
+    color: '#EF4444',
+    fontWeight: '900',
+  },
+
   cartIconWrapper: {
     width: 43,
 
@@ -430,5 +436,4 @@ const styles = StyleSheet.create({
 
     fontWeight: '900',
   },
-
 });
