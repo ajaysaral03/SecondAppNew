@@ -1,13 +1,9 @@
+
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import {
-  NavigationContainer,
-} from '@react-navigation/native';
-
-import {
-  createNativeStackNavigator,
-} from '@react-navigation/native-stack';
-
+// Screens
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OtpVerificationScreen from '../screens/OtpVerificationScreen';
@@ -18,14 +14,18 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import OrderSuccessScreen from '../screens/OrderSuccessScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
+import ProductsScreen from '../screens/ProductsScreen';
+import ProductDetailsScreen from '../screens/ProductDetailsScreen';
+import NotificationScreen from '../screens/NotificationScreen';
 
-// ========================================
-// NAVIGATION TYPES
-// ========================================
+// Context Providers
+import { CartProvider } from '../context/CartContext';
+import { FavoritesProvider } from '../context/FavoritesContext';
+import { UserProvider } from '../context/UserContext';
 
+// Navigation Types
 export type RootStackParamList = {
   Splash: undefined;
-
   Login: undefined;
 
   OtpVerification: {
@@ -33,140 +33,114 @@ export type RootStackParamList = {
   };
 
   Home: undefined;
-
   Profile: undefined;
-
   Cart: undefined;
   Favorites: undefined;
   Checkout: undefined;
   OrderSuccess: undefined;
   OrderTracking: undefined;
+  Products: undefined;
+  Notification: undefined;
+
+  ProductDetails: {
+    product: {
+      id: string | number;
+      name: string;
+      price: number | string;
+      image?: string;
+      thumbnail?: string;
+      images?: string[];
+      size?: string;
+      color?: string;
+      [key: string]: any;
+    };
+  };
 };
 
-
-// ========================================
-// STACK
-// ========================================
-
-const Stack =
-  createNativeStackNavigator<RootStackParamList>();
-
-
-// ========================================
-// APP NAVIGATOR
-// ========================================
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
   return (
-    <NavigationContainer>
+    <CartProvider>
+      <FavoritesProvider>
+        <UserProvider>
+          <NavigationContainer>
+            <Stack.Navigator
+              initialRouteName="Splash"
+              screenOptions={{
+                headerShown: false,
+              }}>
 
-      <Stack.Navigator
-        initialRouteName="Splash"
+              <Stack.Screen
+                name="Splash"
+                component={SplashScreen}
+              />
 
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+              />
 
-        {/* =========================
-            SPLASH
-        ========================= */}
+              <Stack.Screen
+                name="OtpVerification"
+                component={OtpVerificationScreen}
+              />
 
-        <Stack.Screen
-          name="Splash"
-          component={SplashScreen}
-        />
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+              />
 
+              <Stack.Screen
+                name="Products"
+                component={ProductsScreen}
+              />
 
-        {/* =========================
-            LOGIN
-        ========================= */}
+              <Stack.Screen
+                name="ProductDetails"
+                component={ProductDetailsScreen}
+              />
 
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-        />
+              <Stack.Screen
+                name="Favorites"
+                component={FavoritesScreen}
+              />
 
+              <Stack.Screen
+                name="Profile"
+                component={ProfileScreen}
+              />
 
-        {/* =========================
-            OTP
-        ========================= */}
+              <Stack.Screen
+                name="Cart"
+                component={CartScreen}
+              />
 
-        <Stack.Screen
-          name="OtpVerification"
-          component={OtpVerificationScreen}
-        />
+              <Stack.Screen
+                name="Checkout"
+                component={CheckoutScreen}
+              />
 
+              <Stack.Screen
+                name="OrderSuccess"
+                component={OrderSuccessScreen}
+              />
 
-        {/* =========================
-            HOME
-        ========================= */}
+              <Stack.Screen
+                name="OrderTracking"
+                component={OrderTrackingScreen}
+              />
 
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-        />
+              <Stack.Screen
+                name="Notification"
+                component={NotificationScreen}
+              />
 
-        {/* =========================
-            FAVORITES
-        ========================= */}
-
-        <Stack.Screen
-          name="Favorites"
-          component={FavoritesScreen}
-        />
-
-
-        {/* =========================
-            PROFILE
-        ========================= */}
-
-        <Stack.Screen
-          name="Profile"
-          component={ProfileScreen}
-        />
-
-
-        {/* =========================
-            CART
-        ========================= */}
-
-        <Stack.Screen
-          name="Cart"
-          component={CartScreen}
-        />
-
-        {/* =========================
-            CHECKOUT
-        ========================= */}
-
-        <Stack.Screen
-          name="Checkout"
-          component={CheckoutScreen}
-        />
-
-        {/* =========================
-            ORDER SUCCESS
-        ========================= */}
-
-        <Stack.Screen
-          name="OrderSuccess"
-          component={OrderSuccessScreen}
-           options={{headerShown: false}}
-        />
-        {/* =========================
-            Order  Tracking Screen
-        ========================= */}
-
-        <Stack.Screen
-          name="OrderTracking"
-          component={OrderTrackingScreen}
-           options={{headerShown: false}}
-        />
-
-      </Stack.Navigator>
-
-    </NavigationContainer>
+            </Stack.Navigator>
+          </NavigationContainer>
+        </UserProvider>
+      </FavoritesProvider>
+    </CartProvider>
   );
 };
 

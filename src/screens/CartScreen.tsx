@@ -28,58 +28,15 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 import {RootStackParamList} from '../navigation/AppNavigator';
+import {useCart} from '../context/CartContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
-
-type CartItem = {
-  id: string;
-  name: string;
-  size: string;
-  color: string;
-  price: number;
-  quantity: number;
-  image: string;
-};
 
 type AlertType = 'success' | 'warning' | 'error';
 
 const CartScreen = ({navigation}: Props) => {
-  // =========================================================
-  // CART DATA
-  // =========================================================
-
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      name: 'Premium T-Shirt',
-      size: 'L',
-      color: 'Black',
-      price: 799,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600',
-    },
-    {
-      id: '2',
-      name: 'Casual Sneakers',
-      size: '9',
-      color: 'White',
-      price: 1499,
-      quantity: 1,
-      image:
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600',
-    },
-    {
-      id: '3',
-      name: 'Classic Backpack',
-      size: 'Standard',
-      color: 'Blue',
-      price: 999,
-      quantity: 2,
-      image:
-        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600',
-    },
-  ]);
+  // Shared cart state used by Home, Products, and Product Details.
+  const {cartItems, updateQuantity, removeFromCart} = useCart();
 
   // =========================================================
   // SWEET ALERT STATES
@@ -221,41 +178,6 @@ const CartScreen = ({navigation}: Props) => {
   };
 
   // =========================================================
-  // UPDATE QUANTITY
-  // =========================================================
-
-  const updateQuantity = (
-    id: string,
-    type: 'increase' | 'decrease',
-  ) => {
-    setCartItems(prevItems =>
-      prevItems.map(item => {
-        if (item.id !== id) {
-          return item;
-        }
-
-        let newQuantity = item.quantity;
-
-        if (type === 'increase') {
-          newQuantity = item.quantity + 1;
-        }
-
-        if (type === 'decrease') {
-          newQuantity = Math.max(
-            1,
-            item.quantity - 1,
-          );
-        }
-
-        return {
-          ...item,
-          quantity: newQuantity,
-        };
-      }),
-    );
-  };
-
-  // =========================================================
   // DELETE ITEM
   // =========================================================
 
@@ -270,11 +192,7 @@ const CartScreen = ({navigation}: Props) => {
       buttonColor: '#DC2626',
 
       onConfirm: () => {
-        setCartItems(prevItems =>
-          prevItems.filter(
-            cartItem => cartItem.id !== item.id,
-          ),
-        );
+        removeFromCart(item.id);
 
         setTimeout(() => {
           showSweetAlert({
@@ -354,8 +272,8 @@ const CartScreen = ({navigation}: Props) => {
             buttonColor: '#2563EB',
 
             onConfirm: () => {
-              // Future:
-              // navigation.navigate('OrderDetails')
+              Future:
+              navigation.navigate('Checkout')
             },
           });
         }, 250);
@@ -804,7 +722,7 @@ const CartScreen = ({navigation}: Props) => {
 
                 <TouchableOpacity
                   activeOpacity={0.85}
-                  onPress={() => navigation.navigate('Checkout')}
+                  onPress={handleCheckout}
                   style={styles.checkoutButton}
                 >
                   <Text style={styles.checkoutButtonText}>
@@ -1485,7 +1403,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
 
-  confirmAlertButton: {
+  confirmAlertButton: {  
     width: '48%',
 
     height: 48,

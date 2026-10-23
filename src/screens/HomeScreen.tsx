@@ -1,14 +1,17 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {useNavigation} from '@react-navigation/native';
 
 import {
   View,
   Text,
+  ActivityIndicator,
   TextInput,
   TouchableOpacity,
   ScrollView,
   Image,
   Animated,
   Easing,
+  Alert,
 } from 'react-native';
 
 import {
@@ -33,10 +36,27 @@ interface Product {
   id: string;
   name: string;
   category: string;
-  price: string;
-  oldPrice: string;
-  rating: string;
+  price: number;
+  oldPrice: number;
+  rating: number;
   image: string;
+}
+
+interface ApiProduct {
+  id: number;
+  title: string;
+  category: string;
+  price: number;
+  discountPercentage: number;
+  rating: number;
+  thumbnail: string;
+}
+
+interface ProductsApiResponse {
+  products: ApiProduct[];
+  total: number;
+  skip: number;
+  limit: number;
 }
 
 interface HomeScreenProps {
@@ -47,7 +67,50 @@ interface HomeScreenProps {
   onHomePress?: () => void;
   onProductsPress?: () => void;
   onFavoritesPress?: () => void;
+  onAddToCart?: (product: Product) => void;
 }
+
+// Same conversion used by ProductsScreen.fixed.tsx
+const USD_TO_INR = 85;
+
+const formatINR = (price: number): string =>
+  `₹${Math.round(price).toLocaleString('en-IN')}`;
+
+const mapApiCategory = (category: string): string => {
+  const value = category.toLowerCase();
+
+  if (value.includes('shoe')) return 'Shoes';
+  if (value.includes('watch')) return 'Watches';
+  if (value.includes('bag')) return 'Bags';
+
+  if (
+    value.includes('beauty') ||
+    value.includes('skin-care') ||
+    value.includes('fragrances') ||
+    value.includes('makeup')
+  ) {
+    return 'Beauty';
+  }
+
+  if (
+    value.includes('furniture') ||
+    value.includes('home-decoration') ||
+    value.includes('kitchen-accessories')
+  ) {
+    return 'Home';
+  }
+
+  if (
+    value.includes('laptop') ||
+    value.includes('smartphone') ||
+    value.includes('mobile-accessories') ||
+    value.includes('tablet')
+  ) {
+    return 'Electronics';
+  }
+
+  return 'Fashion';
+};
 
 const HomeScreen: React.FC<HomeScreenProps> = ({
   onLogout,
@@ -57,26 +120,91 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   onHomePress,
   onProductsPress,
   onFavoritesPress,
+  onAddToCart,
 }) => {
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] =
-    useState('All');
-
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [cartCount, setCartCount] = useState(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [apiError, setApiError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
-  /* ================= ANIMATION ================= */
+  const navigation = useNavigation<any>();
+  
 
-  const fadeAnim = useRef(
-    new Animated.Value(0),
-  ).current;
+  // Fetch products
+  useEffect(() => {
+    let isMounted = true;
 
-  const slideAnim = useRef(
-    new Animated.Value(25),
-  ).current;
+    const fetchProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        setApiError('');
 
-  const floatingAnim = useRef(
-    new Animated.Value(0),
-  ).current;
+        const response = await fetch(
+          'https://dummyjson.com/products?limit=100',
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Products request failed: ${response.status}`,
+          );
+        }
+
+        const data: ProductsApiResponse = await response.json();
+
+        const formattedProducts: Product[] = data.products.map(item => {
+          const discount = Math.min(
+            Math.max(item.discountPercentage || 0, 0),
+            99,
+          );
+
+          const priceInINR = item.price * USD_TO_INR;
+
+          const oldPriceInINR =
+            discount > 0
+              ? priceInINR / (1 - discount / 100)
+              : priceInINR;
+
+          return {
+            id: String(item.id),
+            name: item.title,
+            category: mapApiCategory(item.category),
+            price: Math.round(priceInINR),
+            oldPrice: Math.round(oldPriceInINR),
+            rating: Number(item.rating || 0),
+            image: item.thumbnail,
+          };
+        });
+
+        if (isMounted) {
+          setProducts(formattedProducts);
+        }
+      } catch {
+        if (isMounted) {
+          setApiError(
+            'Products load nahi ho paye. Internet check karke retry karein.',
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingProducts(false);
+        }
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [retryCount]);
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(25)).current;
+  const floatingAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -85,7 +213,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         duration: 600,
         useNativeDriver: true,
       }),
-
       Animated.spring(slideAnim, {
         toValue: 0,
         friction: 7,
@@ -102,7 +229,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-
         Animated.timing(floatingAnim, {
           toValue: 0,
           duration: 1800,
@@ -119,167 +245,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     };
   }, [fadeAnim, slideAnim, floatingAnim]);
 
-  /* ================= CATEGORIES ================= */
-
+  // Categories
   const categories = [
-    {
-      id: '1',
-      name: 'All',
-      icon: '✨',
-    },
-    {
-      id: '2',
-      name: 'Fashion',
-      icon: '👕',
-    },
-    {
-      id: '3',
-      name: 'Shoes',
-      icon: '👟',
-    },
-    {
-      id: '4',
-      name: 'Beauty',
-      icon: '💄',
-    },
-    {
-      id: '5',
-      name: 'Electronics',
-      icon: '🎧',
-    },
-    {
-      id: '6',
-      name: 'Home',
-      icon: '🏠',
-    },
-    {
-      id: '7',
-      name: 'Watches',
-      icon: '⌚',
-    },
-    {
-      id: '8',
-      name: 'Bags',
-      icon: '👜',
-    },
+    {id: '1', name: 'All', icon: '✨'},
+    {id: '2', name: 'Fashion', icon: '👕'},
+    {id: '3', name: 'Shoes', icon: '👟'},
+    {id: '4', name: 'Beauty', icon: '💄'},
+    {id: '5', name: 'Electronics', icon: '🎧'},
+    {id: '6', name: 'Home', icon: '🏠'},
+    {id: '7', name: 'Watches', icon: '⌚'},
+    {id: '8', name: 'Bags', icon: '👜'},
   ];
 
-  /* ================= PRODUCTS ================= */
-
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Premium Sneakers',
-      category: 'Shoes',
-      price: '₹2,499',
-      oldPrice: '₹3,999',
-      rating: '4.8',
-      image:
-        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600',
-    },
-
-    {
-      id: '2',
-      name: 'Smart Watch',
-      category: 'Electronics',
-      price: '₹3,499',
-      oldPrice: '₹5,999',
-      rating: '4.7',
-      image:
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
-    },
-
-    {
-      id: '3',
-      name: 'Classic T-Shirt',
-      category: 'Fashion',
-      price: '₹799',
-      oldPrice: '₹1,299',
-      rating: '4.6',
-      image:
-        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600',
-    },
-
-    {
-      id: '4',
-      name: 'Wireless Headphones',
-      category: 'Electronics',
-      price: '₹1,999',
-      oldPrice: '₹3,499',
-      rating: '4.9',
-      image:
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600',
-    },
-
-    {
-      id: '5',
-      name: 'Leather Handbag',
-      category: 'Bags',
-      price: '₹1,899',
-      oldPrice: '₹2,999',
-      rating: '4.7',
-      image:
-        'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600',
-    },
-
-    {
-      id: '6',
-      name: 'Running Shoes',
-      category: 'Shoes',
-      price: '₹1,799',
-      oldPrice: '₹2,699',
-      rating: '4.6',
-      image:
-        'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600',
-    },
-
-    {
-      id: '7',
-      name: 'Sunglasses',
-      category: 'Fashion',
-      price: '₹699',
-      oldPrice: '₹1,199',
-      rating: '4.5',
-      image:
-        'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600',
-    },
-
-    {
-      id: '8',
-      name: 'Bluetooth Speaker',
-      category: 'Electronics',
-      price: '₹1,299',
-      oldPrice: '₹2,199',
-      rating: '4.8',
-      image:
-        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600',
-    },
-
-    {
-      id: '9',
-      name: 'Luxury Watch',
-      category: 'Watches',
-      price: '₹4,999',
-      oldPrice: '₹7,999',
-      rating: '4.9',
-      image:
-        'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600',
-    },
-
-    {
-      id: '10',
-      name: 'Home Decor Lamp',
-      category: 'Home',
-      price: '₹999',
-      oldPrice: '₹1,599',
-      rating: '4.6',
-      image:
-        'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600',
-    },
-  ];
-
-  /* ================= BANNERS ================= */
-
+  // Banners
   const banners = [
     {
       id: '1',
@@ -289,7 +267,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       image:
         'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1000',
     },
-
     {
       id: '2',
       title: 'New Collection',
@@ -298,7 +275,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       image:
         'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1000',
     },
-
     {
       id: '3',
       title: 'Tech Deals',
@@ -309,8 +285,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     },
   ];
 
-  /* ================= FILTER ================= */
-
+  // Search and category filter
   const filteredProducts = products.filter(product => {
     const categoryMatch =
       selectedCategory === 'All' ||
@@ -323,109 +298,80 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     return categoryMatch && searchMatch;
   });
 
-  /* ================= ADD CART ================= */
-
+  // Add to cart
   const handleAddToCart = (product: Product) => {
+    if (onAddToCart) {
+      onAddToCart(product);
+      return;
+    }
+
     setCartCount(previous => previous + 1);
 
-    SweetAlert.showAlert(
+    Alert.alert(
       'Added to Cart',
       `${product.name} added successfully.`,
-      [
-        {
-          text: 'Continue Shopping',
-        },
-      ],
-      {
-        type: 'success',
-      },
+      [{text: 'Continue Shopping'}],
     );
   };
 
-  /* ================= PRODUCT ================= */
-
+  // Open ProductDetails screen
   const handleProductPress = (product: Product) => {
     if (onProductPress) {
       onProductPress(product);
       return;
     }
 
-    SweetAlert.showAlert(
-      product.name,
-      `${product.price} • ⭐ ${product.rating}`,
-      [
-        {
-          text: 'Add to Cart',
-          onPress: () => handleAddToCart(product),
-        },
-
-        {
-          text: 'Close',
-        },
-      ],
-      {
-        type: 'info',
+    navigation.navigate('ProductDetails', {
+      product: {
+        id: product.id,
+        name: product.name,
+        title: product.name,
+        category: product.category,
+        price: product.price,
+        oldPrice: product.oldPrice,
+        rating: product.rating,
+        image: product.image,
+        thumbnail: product.image,
+        images: [product.image],
       },
-    );
+    });
   };
 
-  /* ================= NOTIFICATION ================= */
-
+  // Notifications
   const handleNotification = () => {
     SweetAlert.showAlert(
       'Notifications',
       'You have 3 new notifications.',
-      [
-        {
-          text: 'OK',
-        },
-      ],
-      {
-        type: 'info',
-      },
+      [{text: 'OK'}],
+      {type: 'info'},
     );
   };
 
   return (
     <View style={styles.container}>
-
-      {/* ================= FIXED HEADER ================= */}
-
-      <Header
-        userName="John William"
-        cartCount={cartCount}
-        onNotificationPress={handleNotification}
-        onProfilePress={onProfilePress}
-      />
-
-      {/* ================= SCROLLABLE CONTENT ================= */}
+      {/* Header */}
+        <Header
+          onProfilePress={() => navigation.navigate('Profile')}
+          onCartPress={() => navigation.navigate('Cart')}
+          cartCount={0}
+          onNotificationPress={() => navigation.navigate('Notification')}
+        />
 
       <Animated.View
         style={[
           styles.contentWrapper,
           {
             opacity: fadeAnim,
-            transform: [
-              {
-                translateY: slideAnim,
-              },
-            ],
+            transform: [{translateY: slideAnim}],
           },
         ]}>
-
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}>
-
-          {/* ================= SEARCH ================= */}
-
+          {/* Search */}
           <View style={styles.searchContainer}>
-
-            <Search
-              size={21}
-              color="#64748B"
-            />
+            <Search size={21} color="#64748B" />
 
             <TextInput
               value={search}
@@ -436,18 +382,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             />
 
             <View style={styles.searchIcon}>
-              <Sparkles
-                size={17}
-                color="#2563EB"
-              />
+              <Sparkles size={17} color="#2563EB" />
             </View>
-
           </View>
 
-          {/* ================= BANNER ================= */}
-
+          {/* Banner slider */}
           <View style={styles.sliderContainer}>
-
             <Slick
               autoplay
               autoplayTimeout={3}
@@ -458,16 +398,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
               paginationStyle={styles.pagination}
               dotStyle={styles.dot}
               activeDotStyle={styles.activeDot}>
-
               {banners.map(banner => (
-                <View
-                  key={banner.id}
-                  style={styles.slide}>
-
+                <View key={banner.id} style={styles.slide}>
                   <Image
-                    source={{
-                      uri: banner.image,
-                    }}
+                    source={{uri: banner.image}}
                     style={styles.bannerImage}
                     resizeMode="cover"
                   />
@@ -475,18 +409,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                   <View style={styles.bannerOverlay} />
 
                   <View style={styles.bannerContent}>
-
                     <View style={styles.saleBadge}>
-
-                      <Tag
-                        size={12}
-                        color="#FFFFFF"
-                      />
-
+                      <Tag size={12} color="#FFFFFF" />
                       <Text style={styles.saleText}>
                         {banner.badge}
                       </Text>
-
                     </View>
 
                     <Text style={styles.bannerTitle}>
@@ -499,53 +426,38 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
                     <TouchableOpacity
                       activeOpacity={0.8}
-                      style={styles.shopButton}>
-
+                      style={styles.shopButton}
+                      onPress={() => onProductsPress?.()}>
                       <Text style={styles.shopButtonText}>
                         Shop Now
                       </Text>
-
                       <ChevronRight
                         size={16}
                         color="#2563EB"
                       />
-
                     </TouchableOpacity>
-
                   </View>
                 </View>
               ))}
             </Slick>
-
           </View>
 
-          {/* ================= CATEGORY TITLE ================= */}
-
+          {/* Category heading */}
           <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Categories</Text>
 
-            <Text style={styles.sectionTitle}>
-              Categories
-            </Text>
-
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>
-                See All
-              </Text>
+            <TouchableOpacity
+              onPress={() => setSelectedCategory('All')}>
+              <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
-
           </View>
 
-          {/* ================= CATEGORIES ================= */}
-
+          {/* Categories */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={
-              styles.categoryScroll
-            }>
-
+            contentContainerStyle={styles.categoryScroll}>
             {categories.map(category => {
-
               const active =
                 selectedCategory === category.name;
 
@@ -555,241 +467,225 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                   style={styles.categoryItem}
                   activeOpacity={0.8}
                   onPress={() =>
-                    setSelectedCategory(
-                      category.name,
-                    )
+                    setSelectedCategory(category.name)
                   }>
-
                   <View
                     style={[
                       styles.categoryIcon,
-                      active &&
-                        styles.categoryIconActive,
+                      active && styles.categoryIconActive,
                     ]}>
-
                     <Text style={styles.categoryEmoji}>
                       {category.icon}
                     </Text>
-
                   </View>
 
                   <Text
                     style={[
                       styles.categoryText,
-                      active &&
-                        styles.categoryTextActive,
+                      active && styles.categoryTextActive,
                     ]}>
-
                     {category.name}
-
                   </Text>
-
                 </TouchableOpacity>
               );
             })}
-
           </ScrollView>
 
-          {/* ================= PRODUCT TITLE ================= */}
-
+          {/* Products heading */}
           <View style={styles.sectionHeader}>
-
             <View>
               <Text style={styles.sectionTitle}>
                 Popular Products
               </Text>
-
               <Text style={styles.sectionSubtitle}>
                 {filteredProducts.length} products available
               </Text>
             </View>
 
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>
-                View All
-              </Text>
+            <TouchableOpacity
+              onPress={() => onProductsPress?.()}>
+              <Text style={styles.seeAll}>View All</Text>
             </TouchableOpacity>
-
           </View>
 
-          {/* ================= PRODUCT GRID ================= */}
-
-          <View style={styles.productGrid}>
-
-            {filteredProducts.map(product => (
-
-              <TouchableOpacity
-                key={product.id}
-                activeOpacity={0.92}
-                style={styles.productCard}
-                onPress={() =>
-                  handleProductPress(product)
-                }>
-
-                {/* PRODUCT IMAGE */}
-
-                <View
-                  style={
-                    styles.productImageContainer
-                  }>
-
-                  <Image
-                    source={{
-                      uri: product.image,
-                    }}
-                    style={styles.productImage}
-                    resizeMode="cover"
-                  />
-
-                  {/* FAVORITE */}
-
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={styles.favoriteButton}>
-
-                    <Heart
-                      size={17}
-                      color="#334155"
-                    />
-
-                  </TouchableOpacity>
-
-                  {/* SALE */}
-
-                  <View style={styles.discountBadge}>
-
-                    <Text style={styles.discountText}>
-                      SALE
-                    </Text>
-
-                  </View>
-
-                </View>
-
-                {/* PRODUCT INFO */}
-
-                <View style={styles.productInfo}>
-
-                  <Text style={styles.productCategory}>
-                    {product.category}
-                  </Text>
-
-                  <Text
-                    numberOfLines={1}
-                    style={styles.productName}>
-
-                    {product.name}
-
-                  </Text>
-
-                  {/* RATING */}
-
-                  <View style={styles.ratingRow}>
-
-                    <Star
-                      size={13}
-                      color="#F59E0B"
-                      fill="#F59E0B"
-                    />
-
-                    <Text style={styles.ratingText}>
-                      {product.rating}
-                    </Text>
-
-                    <Text style={styles.ratingCount}>
-                      (120)
-                    </Text>
-
-                  </View>
-
-                  {/* PRICE */}
-
-                  <View style={styles.priceRow}>
-
-                    <View>
-
-                      <Text style={styles.price}>
-                        {product.price}
-                      </Text>
-
-                      <Text style={styles.oldPrice}>
-                        {product.oldPrice}
-                      </Text>
-
-                    </View>
-
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      style={styles.addButton}
-                      onPress={() =>
-                        handleAddToCart(product)
-                      }>
-
-                      <Plus
-                        size={19}
-                        color="#FFFFFF"
-                      />
-
-                    </TouchableOpacity>
-
-                  </View>
-
-                </View>
-
-              </TouchableOpacity>
-            ))}
-
-          </View>
-
-          {/* ================= EMPTY ================= */}
-
-          {filteredProducts.length === 0 && (
-
-            <View style={styles.emptyContainer}>
-
-              <Package
-                size={45}
-                color="#CBD5E1"
+          {/* Loading */}
+          {loadingProducts && (
+            <View
+              style={{
+                paddingVertical: 28,
+                alignItems: 'center',
+              }}>
+              <ActivityIndicator
+                size="large"
+                color="#2563EB"
               />
-
-              <Text style={styles.emptyTitle}>
-                No products found
+              <Text
+                style={{
+                  marginTop: 10,
+                  color: '#64748B',
+                }}>
+                Loading products...
               </Text>
-
-              <Text style={styles.emptyText}>
-                Try another search or category.
-              </Text>
-
             </View>
-
           )}
 
-        </ScrollView>
+          {/* API error */}
+          {!loadingProducts && apiError !== '' && (
+            <View
+              style={{
+                padding: 20,
+                alignItems: 'center',
+              }}>
+              <Text
+                style={{
+                  color: '#DC2626',
+                  textAlign: 'center',
+                }}>
+                {apiError}
+              </Text>
 
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  setRetryCount(previous => previous + 1)
+                }
+                style={{
+                  marginTop: 12,
+                  paddingHorizontal: 18,
+                  paddingVertical: 10,
+                  backgroundColor: '#2563EB',
+                  borderRadius: 8,
+                }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontWeight: '600',
+                  }}>
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Product grid */}
+          {!loadingProducts && apiError === '' && (
+            <View style={styles.productGrid}>
+              {filteredProducts.map(product => (
+                <TouchableOpacity
+                  key={product.id}
+                  activeOpacity={0.92}
+                  style={styles.productCard}
+                  onPress={() => handleProductPress(product)}>
+                  {/* Product image */}
+                  <View style={styles.productImageContainer}>
+                    <Image
+                      source={{uri: product.image}}
+                      style={styles.productImage}
+                      resizeMode="cover"
+                    />
+
+                    {/* Favorite */}
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.favoriteButton}
+                      onPress={() =>
+                        Alert.alert(
+                          'Favorites',
+                          'Favorites feature ko connect karna baaki hai.',
+                        )
+                      }>
+                      <Heart size={17} color="#334155" />
+                    </TouchableOpacity>
+
+                    {/* Sale badge */}
+                    <View style={styles.discountBadge}>
+                      <Text style={styles.discountText}>
+                        SALE
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Product info */}
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productCategory}>
+                      {product.category}
+                    </Text>
+
+                    <Text
+                      numberOfLines={1}
+                      style={styles.productName}>
+                      {product.name}
+                    </Text>
+
+                    {/* Rating */}
+                    <View style={styles.ratingRow}>
+                      <Star
+                        size={13}
+                        color="#F59E0B"
+                        fill="#F59E0B"
+                      />
+                      <Text style={styles.ratingText}>
+                        {product.rating.toFixed(1)}
+                      </Text>
+                      <Text style={styles.ratingCount}>
+                        (120)
+                      </Text>
+                    </View>
+
+                    {/* Price in INR */}
+                    <View style={styles.priceRow}>
+                      <View>
+                        <Text style={styles.price}>
+                          {formatINR(product.price)}
+                        </Text>
+                        <Text style={styles.oldPrice}>
+                          {formatINR(product.oldPrice)}
+                        </Text>
+                      </View>
+
+                      {/* Plus only adds to cart */}
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        style={styles.addButton}
+                        onPress={() =>
+                          handleAddToCart(product)
+                        }>
+                        <Plus size={19} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Empty state */}
+          {!loadingProducts &&
+            apiError === '' &&
+            filteredProducts.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Package size={45} color="#CBD5E1" />
+                <Text style={styles.emptyTitle}>
+                  No products found
+                </Text>
+                <Text style={styles.emptyText}>
+                  Try another search or category.
+                </Text>
+              </View>
+            )}
+        </ScrollView>
       </Animated.View>
 
-      {/* ================= FIXED FOOTER ================= */}
-
+      {/* Footer */}
       <Footer
         activeTab="home"
         cartCount={cartCount}
-        onHomePress={
-          onHomePress || (() => {})
-        }
-        onProductsPress={
-          onProductsPress || (() => {})
-        }
-        onFavoritesPress={
-          onFavoritesPress || (() => {})
-        }
-        onCartPress={
-          onCartPress || (() => {})
-        }
-        onProfilePress={
-          onProfilePress || (() => {})
-        }
+        onHomePress={onHomePress || (() => {})}
+        onProductsPress={onProductsPress || (() => {})}
+        onFavoritesPress={onFavoritesPress || (() => {})}
+        onCartPress={onCartPress || (() => {})}
+        onProfilePress={onProfilePress || (() => {})}
       />
-
     </View>
   );
 };

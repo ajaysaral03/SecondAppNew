@@ -1,8 +1,7 @@
-import React, {useEffect, useRef} from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   StatusBar,
   Animated,
   Easing,
@@ -10,7 +9,7 @@ import {
 import styles from '../styles/SplashScreen';
 
 
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 import {
   ShoppingBag,

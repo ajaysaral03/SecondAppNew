@@ -12,6 +12,8 @@ import {
   Modal,
   Dimensions,
   Platform,
+  TextInput,
+  Alert,
 } from 'react-native';
 
 import {
@@ -36,11 +38,19 @@ import {
 
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
+import {useUser} from '../context/UserContext';
 
 const {width} = Dimensions.get('window');
 
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
+  const {user, setUser} = useUser();
+
+  const displayName = user?.name?.trim() || 'Guest';
+  const displayMobile = user?.mobile?.trim()
+    ? `+91 ${user.mobile.trim()}`
+    : 'Mobile number not provided';
+  const displayEmail = user?.email?.trim() || 'Email not provided';
 
   // =========================
   // ANIMATIONS
@@ -62,7 +72,42 @@ const ProfileScreen = () => {
   const contactAnim = useRef(new Animated.Value(20)).current;
   const logoutAnim = useRef(new Animated.Value(20)).current;
 
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editName, setEditName] = useState(user?.name ?? '');
+  const [editMobile, setEditMobile] = useState(user?.mobile ?? '');
+  const [editEmail, setEditEmail] = useState(user?.email ?? '');
+
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+
+  const openEditProfile = () => {
+    setEditName(user?.name ?? '');
+    setEditMobile(user?.mobile ?? '');
+    setEditEmail(user?.email ?? '');
+    setShowEditProfile(true);
+  };
+
+  const saveProfile = () => {
+    const cleanName = editName.trim();
+    const cleanMobile = editMobile.replace(/\D/g, '');
+    const cleanEmail = editEmail.trim();
+
+    if (cleanName.length < 2) {
+      Alert.alert('Invalid name', 'Please enter at least 2 characters for your name.');
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
+      Alert.alert('Invalid mobile number', 'Please enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      Alert.alert('Invalid email', 'Please enter a valid email address or leave it blank.');
+      return;
+    }
+
+    setUser({name: cleanName, mobile: cleanMobile, email: cleanEmail});
+    setShowEditProfile(false);
+    Alert.alert('Profile updated', 'Your profile information has been updated.');
+  };
 
   // =========================
   // START ANIMATION
@@ -187,6 +232,7 @@ const ProfileScreen = () => {
 
   const confirmLogout = () => {
     setShowLogoutAlert(false);
+    setUser({name: '', mobile: '', email: ''});
 
     setTimeout(() => {
       try {
@@ -311,9 +357,7 @@ const ProfileScreen = () => {
           {/* EDIT BUTTON */}
 
           <Pressable
-            onPress={() => {
-              console.log('Edit profile');
-            }}
+            onPress={openEditProfile}
             style={({pressed}) => [
               styles.editButton,
               pressed && styles.editPressed,
@@ -373,7 +417,7 @@ const ProfileScreen = () => {
                 <Text
                   style={styles.profileName}
                   numberOfLines={1}>
-                  John William
+                  {displayName}
                 </Text>
 
                 <View style={styles.infoRow}>
@@ -385,7 +429,7 @@ const ProfileScreen = () => {
                   <Text
                     style={styles.infoText}
                     numberOfLines={1}>
-                    johnwilliam@gmail.com
+                    {displayEmail}
                   </Text>
                 </View>
 
@@ -396,7 +440,7 @@ const ProfileScreen = () => {
                   />
 
                   <Text style={styles.infoText}>
-                    +91 98765 43210
+                    {displayMobile}
                   </Text>
                 </View>
 
@@ -590,7 +634,7 @@ const ProfileScreen = () => {
                   <Text
                     style={styles.contactValue}
                     numberOfLines={1}>
-                    johnwilliam@gmail.com
+                    {displayEmail}
                   </Text>
                 </View>
               </View>
@@ -615,7 +659,7 @@ const ProfileScreen = () => {
                   </Text>
 
                   <Text style={styles.contactValue}>
-                    +91 98765 43210
+                    {displayMobile}
                   </Text>
                 </View>
               </View>
@@ -678,6 +722,69 @@ const ProfileScreen = () => {
       {/* =====================================
           LOGOUT MODAL
       ===================================== */}
+
+      <Modal
+        visible={showEditProfile}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditProfile(false)}>
+        <View style={styles.editModalOverlay}>
+          <View style={styles.editModalCard}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Edit profile</Text>
+              <Pressable onPress={() => setShowEditProfile(false)} hitSlop={10}>
+                <X size={22} color="#64748B" />
+              </Pressable>
+            </View>
+
+            <Text style={styles.editFieldLabel}>Full name</Text>
+            <TextInput
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="Enter your full name"
+              autoCapitalize="words"
+              style={styles.editInput}
+              maxLength={60}
+            />
+
+            <Text style={styles.editFieldLabel}>Mobile number</Text>
+            <View style={styles.editMobileRow}>
+              <Text style={styles.editCountryCode}>+91</Text>
+              <TextInput
+                value={editMobile}
+                onChangeText={value => setEditMobile(value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="10-digit mobile number"
+                keyboardType="number-pad"
+                style={[styles.editInput, styles.editMobileInput]}
+                maxLength={10}
+              />
+            </View>
+
+            <Text style={styles.editFieldLabel}>Email (optional)</Text>
+            <TextInput
+              value={editEmail}
+              onChangeText={setEditEmail}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.editInput}
+            />
+
+            <View style={styles.editActions}>
+              <Pressable
+                onPress={() => setShowEditProfile(false)}
+                style={[styles.editActionButton, styles.editCancelButton]}>
+                <Text style={styles.editCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={saveProfile}
+                style={[styles.editActionButton, styles.editSaveButton]}>
+                <Text style={styles.editSaveText}>Save changes</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showLogoutAlert}
@@ -1430,5 +1537,91 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     color: '#FFFFFF',
+  },
+
+  editModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+  },
+  editModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 20,
+    elevation: 12,
+  },
+  editModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  editModalTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#111827',
+  },
+  editFieldLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#475569',
+    marginBottom: 7,
+    marginTop: 8,
+  },
+  editInput: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: '#DCE4F2',
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    color: '#111827',
+    fontSize: 14,
+    backgroundColor: '#F8FAFC',
+  },
+  editMobileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  editCountryCode: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: 12,
+    overflow: 'hidden',
+    color: '#334155',
+    backgroundColor: '#EAF1FF',
+    fontWeight: '800',
+  },
+  editMobileInput: {
+    flex: 1,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 22,
+  },
+  editActionButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editCancelButton: {
+    backgroundColor: '#F1F5F9',
+  },
+  editCancelText: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  editSaveButton: {
+    backgroundColor: '#2563EB',
+  },
+  editSaveText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

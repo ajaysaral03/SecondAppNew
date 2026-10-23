@@ -56,7 +56,16 @@ const OtpVerificationScreen = ({
   // MOBILE NUMBER
   // ========================================
 
-  const {mobile} = route.params;
+  const params = route.params as typeof route.params & {
+    mobile: string;
+    otp?: string;
+    name?: string;
+    apiBaseUrl?: string;
+  };
+  const {mobile} = params;
+  const apiBaseUrl = params.apiBaseUrl || '';
+  const [generatedOtp, setGeneratedOtp] = useState(params.otp || '');
+  const [isVerifying, setIsVerifying] = useState(false);
 
 
   // ========================================
@@ -244,58 +253,51 @@ const OtpVerificationScreen = ({
 
 
   // ========================================
-  // VERIFY OTP
+  // VERIFY OTP: backend API when configured, local demo otherwise
   // ========================================
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
+    const enteredOtp = otp.join('');
 
-    const enteredOtp =
-      otp.join('');
-
-
-    // Check 4 digit OTP
-
-    if (enteredOtp.length !== 4) {
-
-      Alert.alert(
-        'Invalid OTP',
-        'Please enter 4 digit OTP.',
-      );
-
+    if (!/^\d{4}$/.test(enteredOtp)) {
+      Alert.alert('Invalid OTP', 'Please enter all 4 digits.');
       return;
     }
 
+    if (isVerifying) return;
+    setIsVerifying(true);
 
-    // ========================================
-    // DEMO OTP
-    // ========================================
+    try {
+      let verified = false;
 
-    if (enteredOtp === '1234') {
+      if (apiBaseUrl) {
+        const response = await fetch(`${apiBaseUrl}/auth/verify-otp`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({mobile: `+91${mobile}`, otp: enteredOtp}),
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || 'Incorrect OTP. Please try again.');
+        }
+        verified = data.verified === true || data.success === true;
+      } else {
+        // Demo mode only. This comparison is not secure enough for production.
+        verified = Boolean(generatedOtp) && enteredOtp === generatedOtp;
+      }
 
-      Alert.alert(
-        'Success',
-        'OTP Verified Successfully!',
-        [
-          {
-            text: 'Continue',
-            onPress: () => {
-
-              // Go to Home
-
-              navigation.replace(
-                'Home',
-              );
-            },
-          },
-        ],
-      );
-
-    } else {
-
-      Alert.alert(
-        'Invalid OTP',
-        'Please enter correct OTP.',
-      );
+      if (verified) {
+        Alert.alert('Success', 'OTP verified successfully!', [
+          {text: 'Continue', onPress: () => navigation.replace('Home')},
+        ]);
+      } else {
+        Alert.alert('Invalid OTP', 'Please enter the correct 4-digit OTP.');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not verify OTP. Please try again.';
+      Alert.alert('Verification failed', message);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -314,23 +316,32 @@ const OtpVerificationScreen = ({
   // RESEND OTP
   // ========================================
 
-  const handleResend = () => {
+  const handleResend = async () => {
+    try {
+      if (apiBaseUrl) {
+        const response = await fetch(`${apiBaseUrl}/auth/send-otp`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({mobile: `+91${mobile}`, resend: true}),
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || 'Could not resend OTP.');
+        }
+        Alert.alert('OTP sent', data.message || `A new OTP was sent to +91 ${mobile}.`);
+      } else {
+        const nextOtp = String(Math.floor(1000 + Math.random() * 9000));
+        setGeneratedOtp(nextOtp);
+        console.log(`[DEMO OTP RESENT] Mobile: +91${mobile} | OTP: ${nextOtp}`);
+        Alert.alert('Demo OTP generated', `Your new demo OTP is ${nextOtp}.\nNo SMS was sent.`);
+      }
 
-    setOtp([
-      '',
-      '',
-      '',
-      '',
-    ]);
-
-
-    inputRefs.current[0]?.focus();
-
-
-    Alert.alert(
-      'OTP Sent',
-      `New OTP sent to +91 ${mobile}`,
-    );
+      setOtp(['', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not resend OTP. Please try again.';
+      Alert.alert('Resend failed', message);
+    }
   };
 
 
@@ -703,7 +714,7 @@ const OtpVerificationScreen = ({
               activeOpacity={0.85}
 
               disabled={
-                otp.join('').length !== 4
+                otp.join('').length !== 4 || isVerifying
               }
             >
 
@@ -712,7 +723,7 @@ const OtpVerificationScreen = ({
                   styles.verifyButtonText
                 }
               >
-                Verify & Continue
+                {isVerifying ? 'Verifying...' : 'Verify & Continue'}
               </Text>
 
 
@@ -845,7 +856,7 @@ const OtpVerificationScreen = ({
               <Text
                 style={styles.demoText}
               >
-                Use OTP: 1234
+                Enter the OTP shown in the demo alert
               </Text>
 
             </View>

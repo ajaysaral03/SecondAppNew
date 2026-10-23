@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 15,
     paddingTop: 12,
-    paddingBottom: 28,
+    paddingBottom: 24,
   },
 
   /* SECTION HEADINGS */
@@ -511,7 +511,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 2,
     gap: 7,
   },
 
@@ -523,67 +524,90 @@ const styles = StyleSheet.create({
   /* FIXED BOTTOM BAR */
 
   bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingHorizontal: 18,
+    paddingTop: 9,
+    paddingBottom: 9,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E8EDF7',
-    elevation: 12,
+    elevation: 16,
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    gap: 7,
   },
 
   bottomPriceContainer: {
-    flex: 1,
-    marginRight: 10,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  bottomPriceTextGroup: {
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
 
   bottomTotalLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '800',
+    letterSpacing: 1,
     color: '#8490A5',
   },
 
   bottomTotal: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
     color: '#172033',
-    marginTop: 3,
+    marginTop: 2,
+  },
+
+  bottomSecureHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+
+  bottomSecureText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#15803D',
   },
 
   placeOrderButton: {
-    flex: 1,
-    maxWidth: 190,
-    height: 49,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    width: '100%',
+    minHeight: 48,
+    paddingHorizontal: 16,
+    borderRadius: 15,
     backgroundColor: BLUE,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 9,
     elevation: 4,
     shadowColor: BLUE,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
   },
 
   placeOrderDisabled: {
     backgroundColor: '#94A3B8',
     elevation: 0,
+    shadowOpacity: 0,
   },
 
   placeOrderText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '900',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 
   /* SWEETALERT OVERLAY */

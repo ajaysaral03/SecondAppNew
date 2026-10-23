@@ -3,6 +3,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
+  Alert,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -26,8 +27,10 @@ import {
 
 /* eslint-disable react/prop-types */
 import styles from '../styles/LoginScreenStyles';
+import {useUser} from '../context/UserContext';
 
 const LoginScreen = ({navigation}) => {
+  const {setUser} = useUser();
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
 
@@ -148,28 +151,44 @@ const LoginScreen = ({navigation}) => {
     }
   };
 
-  // ================= CONTINUE =================
-
-  const handleContinue = () => {
-    // Name validation
+  // ================= DEMO OTP LOGIN =================
+  // This is a frontend demo only. It does NOT send a real SMS.
+  // For production, generate/verify OTP securely on your backend
+  // and send it through an SMS/OTP provider.
+  const handleContinue = async () => {
     if (name.trim().length < 2) {
+      Alert.alert('Invalid name', 'Please enter at least 2 characters for your name.');
       return;
     }
 
-    // Mobile validation
-    if (mobile.length !== 10) {
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      Alert.alert('Invalid mobile number', 'Please enter a valid 10-digit Indian mobile number.');
       return;
     }
 
-    // ================= IMPORTANT =================
-    // Continue Shopping button click
-    // Login -> OTP Verification
-    // ==============================================
+    // Share the entered profile with CheckoutScreen through UserContext.
+    setUser({name: name.trim(), mobile});
 
-    navigation.navigate('OtpVerification', {
-      mobile: mobile,
-      name: name.trim(),
-    });
+    // Demo OTP: visible in Metro/terminal console and in an alert.
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    console.log(`[DEMO OTP] Mobile: +91${mobile} | OTP: ${otp}`);
+
+    Alert.alert(
+      'Demo OTP generated',
+      `Your demo OTP is ${otp}\n\nIt is also printed in the Metro console. No SMS was sent.`,
+      [
+        {
+          text: 'Continue to verify',
+          onPress: () =>
+            navigation.navigate('OtpVerification', {
+              mobile,
+              name: name.trim(),
+              otp, // Demo only: OTPVerification screen must compare user input with this value.
+            }),
+        },
+      ],
+      { cancelable: false },
+    );
   };
 
   // ================= VALIDATION =================

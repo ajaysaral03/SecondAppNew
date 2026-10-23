@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   BackHandler,
@@ -29,7 +30,9 @@ import {
   AlertCircle,
   PackageCheck,
 } from 'lucide-react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
 import styles from '../styles/CheckoutScreen';
 
 type PaymentMethod = 'UPI' | 'Card' | 'COD';
@@ -41,6 +44,9 @@ type CheckoutItem = {
   name: string;
   price: number;
   quantity: number;
+  image?: string;
+  size?: string;
+  color?: string;
 };
 
 type AlertState = {
@@ -53,35 +59,16 @@ type AlertState = {
   onConfirm?: () => void;
 };
 
-const defaultItems: CheckoutItem[] = [
-  {
-    id: '1',
-    name: 'Premium Casual Shoes',
-    price: 1499,
-    quantity: 1,
-  },
-  {
-    id: '2',
-    name: 'Everyday Backpack',
-    price: 899,
-    quantity: 1,
-  },
-];
-
 const formatPrice = (amount: number) =>
   `₹${amount.toLocaleString('en-IN')}`;
 
 const CheckoutScreen = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const { cartItems, updateQuantity, clearCart } = useCart();
+  const { user } = useUser();
 
-  const routeItems = route.params?.cartItems as
-    | CheckoutItem[]
-    | undefined;
-
-  const [items, setItems] = useState<CheckoutItem[]>(
-    routeItems ?? defaultItems,
-  );
+  // Use the same shared cart data as CartScreen; never show demo products.
+  const items = cartItems as CheckoutItem[];
 
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>('UPI');
@@ -89,13 +76,12 @@ const CheckoutScreen = () => {
   const [deliveryType, setDeliveryType] =
     useState<DeliveryType>('standard');
 
-  const [address] = useState({
-    name: 'Ajay Saral',
-    phone: '98XXXXXX10',
+  const [address, setAddress] = useState({
     line1: 'House No. 12, Vijay Nagar',
     city: 'Indore, Madhya Pradesh',
     pincode: '452010',
   });
+  const [addressModalVisible, setAddressModalVisible] = useState(false);
 
   const [alert, setAlert] = useState<AlertState>({
     visible: false,
@@ -226,26 +212,27 @@ const CheckoutScreen = () => {
     id: string | number,
     change: number,
   ) => {
-    setItems(current =>
-      current
-        .map(item =>
-          item.id === id
-            ? {
-                ...item,
-                quantity: Math.max(1, item.quantity + change),
-              }
-            : item,
-        ),
-    );
+    const item = items.find(current => String(current.id) === String(id));
+    if (!item) return;
+    // The shared cart context keeps Cart and Checkout quantities in sync.
+    if (change > 0) {
+      updateQuantity(String(id), 'increase');
+    } else if (item.quantity > 1) {
+      updateQuantity(String(id), 'decrease');
+    }
   };
 
   const handleChangeAddress = () => {
-    showAlert(
-      'info',
-      'Delivery Address',
-      'Connect your Address Screen here to select or edit your delivery address.',
-      'Got it',
-    );
+    setAddressModalVisible(true);
+  };
+
+  const handleSaveAddress = () => {
+    if (!address.line1.trim() || !address.city.trim() || !/^\d{6}$/.test(address.pincode.trim())) {
+      showAlert('error', 'Invalid address', 'Please enter your full address, city and a valid 6-digit PIN code.', 'OK');
+      return;
+    }
+    setAddressModalVisible(false);
+    showAlert('success', 'Address updated', 'Your delivery address has been updated.', 'OK');
   };
 
 
@@ -260,7 +247,7 @@ const handlePlaceOrder = () => {
     return;
   }
 
-  if (!address.line1.trim() || !address.pincode.trim()) {
+  if (!address.line1.trim() || !address.city.trim() || !/^\d{6}$/.test(address.pincode.trim())) {
     showAlert(
       'error',
       'Address required',
@@ -279,19 +266,21 @@ const handlePlaceOrder = () => {
     'Confirm Order',
     () => {
       const orderId = `ORD-${Date.now()}`;
+      const orderItems = items.map(item => ({ ...item }));
 
       navigation.replace('OrderSuccess', {
         orderId,
         total,
         paymentMethod,
         deliveryType,
-        cartItems: items,
-        orderItems: items,
-        productName: items[0]?.name ?? 'Your Product',
-        productPrice: items[0]?.price ?? total,
-        quantity: items[0]?.quantity ?? 1,
+        cartItems: orderItems,
+        orderItems,
+        productName: orderItems[0]?.name ?? 'Your Product',
+        productPrice: orderItems[0]?.price ?? total,
+        quantity: orderItems[0]?.quantity ?? 1,
         productVariant: '',
       });
+      clearCart();
     },
     'Review',
   );
@@ -442,8 +431,8 @@ const handlePlaceOrder = () => {
               </View>
 
               <View style={styles.addressMain}>
-                <Text style={styles.addressName}>{address.name}</Text>
-                <Text style={styles.addressPhone}>{address.phone}</Text>
+                <Text style={styles.addressName}>{user.name || 'Name not available'}</Text>
+                <Text style={styles.addressPhone}>{user.mobile ? `+91 ${user.mobile}` : 'Mobile number not available'}</Text>
               </View>
 
               <TouchableOpacity
@@ -704,7 +693,7 @@ const handlePlaceOrder = () => {
           </View>
 
           <View style={styles.bottomNote}>
-            <ShieldCheck size={17} color="#64748B" />
+            <ShieldCheck size={12} color="#64748B" />
             <Text style={styles.bottomNoteText}>
               Your information is protected during checkout.
             </Text>
@@ -747,6 +736,57 @@ const handlePlaceOrder = () => {
           <ChevronRight size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </Animated.View>
+
+      {/* EDIT DELIVERY ADDRESS MODAL */}
+      <Modal
+        transparent
+        visible={addressModalVisible}
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setAddressModalVisible(false)}
+      >
+        <View style={{flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.55)', justifyContent: 'center', padding: 20}}>
+          <View style={{backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20}}>
+            <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8}}>
+              <Text style={{fontSize: 20, fontWeight: '700', color: '#0F172A'}}>Edit delivery address</Text>
+              <TouchableOpacity onPress={() => setAddressModalVisible(false)} accessibilityLabel="Close address editor">
+                <X size={22} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            <Text style={{fontSize: 13, color: '#64748B', marginBottom: 16}}>Name and mobile number come from your login details.</Text>
+            <Text style={{fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6}}>House / street address</Text>
+            <TextInput
+              value={address.line1}
+              onChangeText={value => setAddress(current => ({...current, line1: value}))}
+              placeholder="House number, street, area"
+              multiline
+              style={{borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, color: '#0F172A', marginBottom: 12, minHeight: 48}}
+              placeholderTextColor="#94A3B8"
+            />
+            <Text style={{fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6}}>City / State</Text>
+            <TextInput
+              value={address.city}
+              onChangeText={value => setAddress(current => ({...current, city: value}))}
+              placeholder="City, State"
+              style={{borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, color: '#0F172A', marginBottom: 12}}
+              placeholderTextColor="#94A3B8"
+            />
+            <Text style={{fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6}}>PIN code</Text>
+            <TextInput
+              value={address.pincode}
+              onChangeText={value => setAddress(current => ({...current, pincode: value.replace(/\D/g, '').slice(0, 6)}))}
+              placeholder="6-digit PIN code"
+              keyboardType="number-pad"
+              maxLength={6}
+              style={{borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 11, color: '#0F172A', marginBottom: 18}}
+              placeholderTextColor="#94A3B8"
+            />
+            <TouchableOpacity onPress={handleSaveAddress} activeOpacity={0.85} style={{backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 14, alignItems: 'center'}}>
+              <Text style={{color: '#FFFFFF', fontSize: 15, fontWeight: '700'}}>Save Address</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* CUSTOM SWEETALERT MODAL */}
       <Modal
