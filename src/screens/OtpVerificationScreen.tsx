@@ -884,7 +884,3 @@ const OtpVerificationScreen = ({
 export default OtpVerificationScreen;
 
 
-// =================================================
-// STYLES
-// =================================================
-

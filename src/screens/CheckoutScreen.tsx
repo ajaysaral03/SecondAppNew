@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Image,
   Modal,
   ScrollView,
   StatusBar,
@@ -575,7 +576,7 @@ const handlePlaceOrder = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Order Items</Text>
             <Text style={styles.itemsCount}>
-              {items.reduce((count, item) => count + item.quantity, 0)} items
+              {items.reduce((count, item) => count + item.quantity, 0)} items 
             </Text>
           </View>
 
@@ -595,8 +596,16 @@ const handlePlaceOrder = () => {
 
                   <View style={styles.orderItem}>
                     <View style={styles.productPlaceholder}>
-                      <ShoppingBag size={24} color="#2563EB" />
-                    </View>
+                        {item.image ? (
+                          <Image
+                            source={{uri: item.image}}
+                            style={styles.productImage}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <ShoppingBag size={26} color="#2563EB" />
+                        )}
+                      </View>
 
                     <View style={styles.orderItemDetails}>
                       <Text style={styles.orderItemName} numberOfLines={2}>

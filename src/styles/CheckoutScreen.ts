@@ -342,14 +342,22 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
 
-  productPlaceholder: {
-    width: 58,
-    height: 64,
-    borderRadius: 13,
-    backgroundColor: '#EAF1FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+productPlaceholder: {
+  width: 88,
+  height: 88,
+  borderRadius: 14,
+  backgroundColor: '#F8FAFC',
+  borderWidth: 1,
+  borderColor: '#E2E8F0',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+},
+
+productImage: {
+  width: '100%',
+  height: '100%',
+},
 
   orderItemDetails: {
     flex: 1,

@@ -1,7 +1,10 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
+  Image,
+  Modal,
+  Pressable,
   TouchableOpacity,
   ScrollView,
   StatusBar,
@@ -22,17 +25,21 @@ import {
 import {useNavigation, useRoute} from '@react-navigation/native';
 import styles from '../styles/OrderSuccessScreen';
 
+
+
 type OrderItem = {
   id?: string | number;
   name: string;
   price: number;
   quantity: number;
   variant?: string;
+  image?: string; 
 };
 
 const OrderSuccessScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const [selectedImage, setSelectedImage] =useState<string | null>(null);
 
   const orderId = route.params?.orderId ?? 'ORD-20261015-4821';
   const total = Number(route.params?.total ?? 1499);
@@ -293,10 +300,58 @@ const OrderSuccessScreen = () => {
                   styles.productCard,
                   index > 0 && styles.productCardDivider,
                 ]}>
-                <View style={styles.productImage}>
-                  <Package size={30} color="#2563EB" />
-                </View>
+<Pressable
+  style={styles.productImage}
+  onPress={() => {
+    if (item.image) {
+      setSelectedImage(item.image);
+    }
+  }}
+>
+  {item.image ? (
+    <Image
+      source={{uri: item.image}}
+      style={styles.productImageActual}
+      resizeMode="contain"
+    />
+  ) : (
+    <Package size={30} color="#2563EB" />
+  )}
+</Pressable>
+<Modal
+  visible={selectedImage !== null}
+  transparent
+  animationType="fade"
+  statusBarTranslucent
+  onRequestClose={() => setSelectedImage(null)}
+>
+  <Pressable
+    style={styles.imageModalOverlay}
+    onPress={() => setSelectedImage(null)}
+  >
+    <View style={styles.imageModalContent}>
+      <TouchableOpacity
+        style={styles.imageModalClose}
+        onPress={() => setSelectedImage(null)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.imageModalCloseText}>✕</Text>
+      </TouchableOpacity>
 
+      {selectedImage && (
+        <Image
+          source={{uri: selectedImage}}
+          style={styles.imageModalLarge}
+          resizeMode="contain"
+        />
+      )}
+
+      <Text style={styles.imageModalCaption}>
+        Product Image
+      </Text>
+    </View>
+  </Pressable>
+</Modal>  
                 <View style={styles.productInfo}>
                   <Text style={styles.productName} numberOfLines={2}>
                     {item.name}
@@ -383,6 +438,8 @@ const OrderSuccessScreen = () => {
           <Text style={styles.trackButtonText}>Track Order</Text>
           <ArrowRight size={19} color="#FFFFFF" />
         </TouchableOpacity>
+
+        
 
         <TouchableOpacity
           style={styles.continueButton}

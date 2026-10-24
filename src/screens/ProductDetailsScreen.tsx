@@ -161,17 +161,29 @@ const ProductDetailsScreen = ({route, navigation}: Props) => {
     navigation.navigate('Cart');
   };
 
-  const buyNow = () => {
-    if (!inStock) {
-      Alert.alert('Out of stock', 'This product is currently unavailable.');
-      return;
-    }
+const buyNow = () => {
+  if (!inStock) {
     Alert.alert(
-      'Buy Now',
-      `Product: ${product.name}\nTotal: ${money(price * quantity)}\n\nConnect your checkout screen to continue.`,
-      [{text: 'OK'}],
+      'Out of Stock',
+      'This product is currently unavailable.',
     );
-  };
+    return;
+  }
+
+  if (!product?.id || price <= 0) {
+    Alert.alert(
+      'Invalid Product',
+      'Product details or price are unavailable.',
+    );
+    return;
+  }
+
+  // Add selected product to cart
+  addProductToCart(product, quantity);
+
+  // Navigate directly to Checkout
+  navigation.navigate('Checkout');
+};
 
   const renderProductImage = ({item}: {item: string}) => (
     <View style={styles.imageSlide}>

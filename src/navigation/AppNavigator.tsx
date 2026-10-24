@@ -17,6 +17,7 @@ import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import ProductsScreen from '../screens/ProductsScreen';
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
 import NotificationScreen from '../screens/NotificationScreen';
+import MyOrdersScreen from '../screens/MyOrdersScreen';
 
 // Context Providers
 import { CartProvider } from '../context/CartContext';
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   OrderSuccess: undefined;
   OrderTracking: undefined;
   Products: undefined;
+  MyOrders: undefined;
   Notification: undefined;
 
   ProductDetails: {
@@ -134,6 +136,11 @@ const AppNavigator = () => {
               <Stack.Screen
                 name="Notification"
                 component={NotificationScreen}
+              />
+
+              <Stack.Screen
+                name="MyOrders"
+                component={MyOrdersScreen}
               />
 
             </Stack.Navigator>

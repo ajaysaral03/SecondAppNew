@@ -6,6 +6,76 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
+  productImageActual: {
+  width: '100%',
+  height: '100%',
+  borderRadius: 12,
+},
+
+imageModalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 22,
+},
+
+imageModalContent: {
+  width: '100%',
+  maxWidth: 390,
+  backgroundColor: '#FFFFFF',
+  borderRadius: 24,
+  padding: 16,
+  paddingTop: 58,
+  alignItems: 'center',
+  justifyContent: 'center',
+  elevation: 24,
+  shadowColor: '#000000',
+  shadowOffset: {
+    width: 0,
+    height: 10,
+  },
+  shadowOpacity: 0.3,
+  shadowRadius: 20,
+},
+
+imageModalClose: {
+  position: 'absolute',
+  top: 12,
+  right: 12,
+  width: 38,
+  height: 38,
+  borderRadius: 19,
+  backgroundColor: '#F1F5F9',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 10,
+  elevation: 4,
+},
+
+imageModalCloseText: {
+  fontSize: 21,
+  color: '#0F172A',
+  fontWeight: '700',
+},
+
+imageModalLarge: {
+  width: '100%',
+  height: 320,
+  backgroundColor: '#F8FAFC',
+  borderRadius: 16,
+},
+
+imageModalCaption: {
+  marginTop: 14,
+  marginBottom: 4,
+  fontSize: 15,
+  color: '#334155',
+  fontWeight: '700',
+  textAlign: 'center',
+  letterSpacing: 0.3,
+},
+
   header: {
     marginTop:34,
     minHeight: 72,
